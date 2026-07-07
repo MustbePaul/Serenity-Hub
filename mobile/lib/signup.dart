@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'home.dart';
-import 'login.dart'; // Assuming you have a login.dart file
+
+import 'api_client.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -11,280 +10,98 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _api = ApiClient();
   final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _privacyConsent = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
-    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email';
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_privacyConsent) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Privacy consent is required to create an account.')));
+      return;
     }
-    if (!RegExp(
-      r'^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$',
-    ).hasMatch(value)) {
-      return 'Please enter a valid email address';
-    }
-    return null;
-  }
-
-  String? _validateUsername(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your username';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    return null;
-  }
-
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        final AuthResponse response = await Supabase.instance.client.auth
-            .signUp(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-              data: {'username': _usernameController.text.trim()},
-            );
-
-        final User? user = response.user;
-
-        if (user != null) {
-          try {
-            final List<dynamic> data =
-                await Supabase.instance.client.from('profiles').insert([
-                  {
-                    'id': user.id,
-                    'email': user.email,
-                    'username': _usernameController.text.trim(),
-                  },
-                ]).select();
-
-            if (data.isEmpty) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Sign up successful!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              }
-            } else {
-              debugPrint('Profile insert response: $data');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Sign up successful, but potential issue creating profile. Check logs.',
-                    ),
-                    backgroundColor: Colors.orangeAccent,
-                  ),
-                );
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              }
-            }
-          } catch (e) {
-            debugPrint('Unexpected error during profile creation: $e');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Sign up successful, but unexpected error creating profile: $e',
-                  ),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
-              );
-            }
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Sign up failed: Could not retrieve user information.',
-                ),
-                backgroundColor: Colors.orangeAccent,
-              ),
-            );
-          }
-        }
-      } on AuthException catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Sign up failed: ${e.message}'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('An unexpected error occurred: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
+    setState(() => _isLoading = true);
+    try {
+      final response = await _api.post('/auth/register', {
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+        'privacy_consent': true,
+      });
+      await _api.saveToken(response['data']['token'].toString());
+      if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/app', (_) => false);
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              // Determine if the screen width is large (e.g., for tablets)
-              bool isLargeScreen = constraints.maxWidth > 600;
-
-              // Calculate the width of the form container
-              double containerWidth =
-                  isLargeScreen ? 400 : constraints.maxWidth * 0.9;
-
-              // Adjust vertical spacing based on screen height
-              double verticalSpacing = constraints.maxHeight > 700 ? 20 : 16;
-
-              // Adjust padding for the container
-              EdgeInsets containerPadding = EdgeInsets.all(
-                isLargeScreen ? 24 : 20,
-              );
-
-              // Adjust font size for the title
-              double titleFontSize = isLargeScreen ? 28 : 24;
-
-              return Container(
-                width: containerWidth,
-                padding: containerPadding,
-                decoration: BoxDecoration(
-                  color: const Color(0xC9FFC0CB),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.black),
+      appBar: AppBar(title: const Text('Create account')),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Start with consent and care', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline)),
+                      validator: (value) => value == null || value.trim().isEmpty ? 'Enter your name.' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                      validator: (value) => value == null || !value.contains('@') ? 'Enter a valid email.' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock_outline)),
+                      validator: (value) => value == null || value.length < 8 ? 'Use at least 8 characters.' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: _privacyConsent,
+                      onChanged: (value) => setState(() => _privacyConsent = value ?? false),
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('I understand Serenity Hub stores wellness profile data to provide support features.'),
+                    ),
+                    const SizedBox(height: 12),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ElevatedButton(onPressed: _submit, child: const Text('Create account')),
+                    const SizedBox(height: 12),
+                    OutlinedButton(onPressed: () => Navigator.pushReplacementNamed(context, '/login'), child: const Text('I already have an account')),
+                  ],
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Text(
-                        'SIGN UP',
-                        textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontSize: titleFontSize,
-                              fontWeight: FontWeight.bold,
-                            ) ??
-                            TextStyle(
-                              fontSize: titleFontSize,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      SizedBox(height: verticalSpacing * 1.5),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(labelText: 'Email'),
-                        validator: _validateEmail,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      SizedBox(height: verticalSpacing),
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                        ),
-                        validator: _validateUsername,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      SizedBox(height: verticalSpacing),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        obscureText: _obscurePassword,
-                        validator: _validatePassword,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submitForm(),
-                      ),
-                      SizedBox(height: verticalSpacing * 2),
-                      if (_isLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        ElevatedButton(
-                          onPressed: _submitForm,
-                          child: const Text('SIGN UP'),
-                        ),
-                      SizedBox(height: verticalSpacing),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const Login(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Already have an account? Login',
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       ),

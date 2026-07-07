@@ -8,8 +8,8 @@ void main() {
   ) async {
     await tester.pumpWidget(const SerenityHubApp());
 
-    expect(find.text('WELCOME TO SERENITY HUB'), findsOneWidget);
-    expect(find.text('LOGIN'), findsOneWidget);
-    expect(find.text('SIGNUP'), findsOneWidget);
+    expect(find.text('Serenity Hub'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
   });
 }

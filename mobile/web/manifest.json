@@ -1,11 +1,11 @@
 {
-    "name": "serenity_hub",
-    "short_name": "serenity_hub",
+    "name": "Serenity Hub",
+    "short_name": "Serenity Hub",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAFCFB",
+    "theme_color": "#408B7D",
+    "description": "Mental wellness and therapy consultation platform.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

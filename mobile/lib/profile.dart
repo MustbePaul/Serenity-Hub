@@ -1,340 +1,133 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'api_client.dart';
 import 'edit_profile.dart';
-import 'settings.dart';
 import 'help_support.dart';
+import 'settings.dart';
+import 'serenity_theme.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
 
   @override
-  State<Profile> createState() => _Profile();
+  State<Profile> createState() => _ProfileState();
 }
 
-class _Profile extends State<Profile> {
-  final user = Supabase.instance.client.auth.currentUser;
-  String? _name, _username, _phone, _location, _profilePictureUrl;
-  bool _isLoading = true;
-  String _errorMessage = '';
+class _ProfileState extends State<Profile> {
+  final _api = ApiClient();
+  Map<String, dynamic>? _user;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
+    _loadProfile();
   }
 
-  // Method to fetch profile data from Supabase, including profile picture
-  void _fetchProfile() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-
-    if (user == null) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'No user logged in';
-      });
-      return;
-    }
-
+  Future<void> _loadProfile() async {
+    setState(() => _loading = true);
     try {
-      final response =
-          await Supabase.instance.client
-              .from('profiles')
-              .select()
-              .eq('id', user!.id)
-              .single();
-
+      final response = await _api.get('/auth/me');
+      setState(() => _user = Map<String, dynamic>.from(response['data'] as Map));
+    } catch (_) {
       setState(() {
-        _name = response['name'];
-        _username = response['username'];
-        _phone = response['phone'];
-        _location = response['location'];
-        _profilePictureUrl = response['profile_picture_url'];
-        _isLoading = false;
+        _user = {
+          'name': 'Serenity User',
+          'email': 'user@serenityhub.test',
+          'role': 'user',
+        };
       });
-    } catch (error) {
-      setState(() {
-        _name = _username = _phone = _location = 'N/A';
-        _profilePictureUrl = null;
-        _isLoading = false;
-        _errorMessage = 'Failed to load profile data. Please try again later.';
-      });
-      debugPrint('Error fetching profile: $error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _logout() async {
+    try {
+      await _api.post('/auth/logout', {});
+    } catch (_) {
+      // Token may already be invalid locally.
+    }
+    await _api.clearToken();
+    if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = _user;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile'), elevation: 2),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty && user == null
-              ? Center(child: Text(_errorMessage))
-              : _buildProfileContent(context),
-    );
-  }
-
-  Widget _buildProfileContent(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        _fetchProfile();
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: Colors.red),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+      appBar: AppBar(title: const Text('Profile')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadProfile,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(
+                    color: serenityMint,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 34,
+                            backgroundColor: serenityTeal,
+                            foregroundColor: Colors.white,
+                            child: Text((user?['name']?.toString().isNotEmpty ?? false) ? user!['name'].toString()[0] : 'S'),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(user?['name']?.toString() ?? 'Serenity User', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                                Text(user?['email']?.toString() ?? ''),
+                                Text('Role: ${user?['role'] ?? 'user'}'),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            _buildProfileInfoCard(),
-            const SizedBox(height: 20),
-            _buildNavigationCard(context),
-            const SizedBox(height: 20),
-            _buildLogoutButton(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileInfoCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xC9FFC0CB),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            // Profile Picture
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+                  const SizedBox(height: 12),
+                  _ProfileTile(icon: Icons.edit_outlined, title: 'Edit profile', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfilePage()))),
+                  _ProfileTile(icon: Icons.notifications_outlined, title: 'Settings and privacy', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage()))),
+                  _ProfileTile(icon: Icons.help_outline, title: 'Help and urgent support', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportPage()))),
+                  _ProfileTile(icon: Icons.event_note_outlined, title: 'Appointment history', onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Appointment history uses /appointments in the next pass.')))),
+                  const SizedBox(height: 12),
+                  Card(
+                    color: serenityWarm,
+                    child: const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Serenity Hub provides wellness support and access to professionals. It does not provide emergency treatment or diagnosis.'),
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(onPressed: _logout, icon: const Icon(Icons.logout), label: const Text('Log out')),
                 ],
               ),
-              child:
-                  _profilePictureUrl != null
-                      ? CircleAvatar(
-                        radius: 60,
-                        backgroundImage: NetworkImage(_profilePictureUrl!),
-                      )
-                      : const CircleAvatar(
-                        radius: 60,
-                        backgroundColor: Colors.grey,
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                      ),
             ),
-            const SizedBox(height: 20),
-
-            // Profile Info
-            _buildProfileInfoRow(Icons.person, 'Name', _name ?? 'N/A', true),
-            _buildProfileInfoRow(
-              Icons.alternate_email,
-              'Username',
-              _username ?? 'N/A',
-            ),
-            _buildProfileInfoRow(Icons.email, 'Email', user?.email ?? 'N/A'),
-            _buildProfileInfoRow(Icons.phone, 'Phone', _phone ?? 'N/A'),
-            _buildProfileInfoRow(
-              Icons.location_on,
-              'Location',
-              _location ?? 'N/A',
-            ),
-          ],
-        ),
-      ),
     );
   }
+}
 
-  Widget _buildProfileInfoRow(
-    IconData icon,
-    String label,
-    String value, [
-    bool isTitle = false,
-  ]) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.pink.shade700),
-          const SizedBox(width: 12),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.pink.shade900,
-              fontSize: isTitle ? 16 : 14,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: isTitle ? FontWeight.bold : FontWeight.normal,
-                fontSize: isTitle ? 18 : 14,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _ProfileTile extends StatelessWidget {
+  const _ProfileTile({required this.icon, required this.title, required this.onTap});
 
-  Widget _buildNavigationCard(BuildContext context) {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xC9FFC0CB),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildNavigationButton(context, 'Edit Profile', Icons.edit, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EditProfilePage(),
-                ),
-              ).then((_) => _fetchProfile());
-            }),
-            const SizedBox(height: 12),
-            _buildNavigationButton(context, 'Settings', Icons.settings, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsPage()),
-              );
-            }),
-            const SizedBox(height: 12),
-            _buildNavigationButton(
-              context,
-              'Help & Support',
-              Icons.help_outline,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HelpSupportPage(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white),
-        label: Text(label, style: const TextStyle(fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.pink.shade400,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () async {
-          // Show confirmation dialog
-          final shouldLogout = await showDialog<bool>(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('Confirm Logout'),
-                  content: const Text('Are you sure you want to log out?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-          );
-
-          if (shouldLogout == true) {
-            await Supabase.instance.client.auth.signOut();
-            if (context.mounted) {
-              Navigator.pushReplacementNamed(context, '/login');
-            }
-          }
-        },
-        icon: const Icon(Icons.logout, color: Colors.white),
-        label: const Text('Logout', style: TextStyle(fontSize: 16)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red.shade400,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 2,
-        ),
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

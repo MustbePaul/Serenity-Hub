@@ -11,6 +11,18 @@ flutter pub get
 flutter run
 ```
 
-## Backend Migration Note
+For Chrome/Web, use the included VS Code launch profile or run:
 
-Some current screens still call Supabase directly or use mock data. Those flows should be migrated to HTTP calls against the Laravel API as the backend is implemented.
+```bash
+flutter run -d chrome --no-web-resources-cdn
+```
+
+The web app registers a local Roboto font asset so it can start without fetching fonts from `fonts.gstatic.com`.
+
+## Backend API
+
+The app uses the Laravel API in `../backend/`. By default the Flutter client points to:
+
+```text
+http://127.0.0.1:8000/api/v1
+```
