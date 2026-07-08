@@ -13,9 +13,16 @@ class BookmarkPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Saved resources', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            'Saved resources',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
-          const Text('Bookmarks sync through /api/v1/bookmarks when signed in.'),
+          const Text(
+            'Bookmarks sync through /api/v1/bookmarks when signed in.',
+          ),
           const SizedBox(height: 16),
           ...saved.map(
             (resource) => Card(
@@ -25,7 +32,14 @@ class BookmarkPage extends StatelessWidget {
                 subtitle: Text(resource['summary'].toString()),
                 trailing: IconButton(
                   icon: const Icon(Icons.bookmark_remove_outlined),
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bookmark removal is wired to the Laravel API next.'))),
+                  onPressed:
+                      () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Bookmark removal is wired to the Laravel API next.',
+                          ),
+                        ),
+                      ),
                 ),
               ),
             ),

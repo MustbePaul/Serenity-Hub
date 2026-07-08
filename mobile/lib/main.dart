@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'app_shell.dart';
+import 'bookmark.dart';
 import 'login.dart';
 import 'recovery.dart';
+import 'search.dart';
 import 'serenity_theme.dart';
 import 'signup.dart';
 
@@ -28,10 +30,13 @@ class SerenityHubApp extends StatelessWidget {
         '/app': (context) => const AppShell(),
         '/home': (context) => const AppShell(initialIndex: 0),
         '/resources': (context) => const AppShell(initialIndex: 1),
-        '/consultation': (context) => const AppShell(initialIndex: 2),
-        '/bookmark': (context) => const AppShell(initialIndex: 3),
+        '/library': (context) => const AppShell(initialIndex: 1),
+        '/sessions': (context) => const AppShell(initialIndex: 2),
+        '/consultation': (context) => const AppShell(initialIndex: 3),
+        '/bookmark': (context) => const BookmarkPage(),
         '/profile': (context) => const AppShell(initialIndex: 4),
         '/search': (context) => const AppShell(initialIndex: 1),
+        '/resource-search': (context) => const SearchPage(),
       },
     );
   }
@@ -50,11 +55,17 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-              Icon(Icons.spa_outlined, size: 56, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.spa_outlined,
+                size: 56,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(height: 20),
               Text(
                 'Serenity Hub',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -69,7 +80,10 @@ class WelcomeScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(

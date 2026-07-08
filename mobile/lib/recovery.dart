@@ -26,17 +26,28 @@ class _RecoveryState extends State<Recovery> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Enter your email and we will send reset instructions when email delivery is configured on the Laravel API.'),
+              const Text(
+                'Enter your email and we will send reset instructions when email delivery is configured on the Laravel API.',
+              ),
               const SizedBox(height: 20),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password reset endpoint is ready to connect next.')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Password reset endpoint is ready to connect next.',
+                      ),
+                    ),
+                  );
                 },
                 child: const Text('Send instructions'),
               ),

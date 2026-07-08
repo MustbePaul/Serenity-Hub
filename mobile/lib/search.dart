@@ -13,7 +13,8 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final _api = ApiClient();
   final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _resources = sampleResources.map(Map<String, dynamic>.from).toList();
+  List<Map<String, dynamic>> _resources =
+      sampleResources.map(Map<String, dynamic>.from).toList();
   bool _loading = false;
 
   @override
@@ -32,17 +33,28 @@ class _SearchPageState extends State<SearchPage> {
     setState(() => _loading = true);
     try {
       final query = Uri.encodeQueryComponent(_searchController.text.trim());
-      final response = await _api.get('/resources${query.isEmpty ? '' : '?q=$query'}');
+      final response = await _api.get(
+        '/resources${query.isEmpty ? '' : '?q=$query'}',
+      );
       setState(() {
-        _resources = (response['data'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        _resources =
+            (response['data'] as List)
+                .map((item) => Map<String, dynamic>.from(item as Map))
+                .toList();
       });
     } catch (_) {
       final q = _searchController.text.toLowerCase();
       setState(() {
-        _resources = sampleResources
-            .where((item) => q.isEmpty || item['title'].toString().toLowerCase().contains(q) || item['summary'].toString().toLowerCase().contains(q))
-            .map(Map<String, dynamic>.from)
-            .toList();
+        _resources =
+            sampleResources
+                .where(
+                  (item) =>
+                      q.isEmpty ||
+                      item['title'].toString().toLowerCase().contains(q) ||
+                      item['summary'].toString().toLowerCase().contains(q),
+                )
+                .map(Map<String, dynamic>.from)
+                .toList();
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -62,7 +74,10 @@ class _SearchPageState extends State<SearchPage> {
               decoration: InputDecoration(
                 hintText: 'Search stress, sleep, anxiety...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(onPressed: _loadResources, icon: const Icon(Icons.arrow_forward)),
+                suffixIcon: IconButton(
+                  onPressed: _loadResources,
+                  icon: const Icon(Icons.arrow_forward),
+                ),
               ),
               onSubmitted: (_) => _loadResources(),
             ),
@@ -75,7 +90,10 @@ class _SearchPageState extends State<SearchPage> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final resource = _resources[index];
-                final category = resource['category'] is Map ? resource['category']['name']?.toString() : 'Resource';
+                final category =
+                    resource['category'] is Map
+                        ? resource['category']['name']?.toString()
+                        : 'Resource';
                 return Card(
                   child: ListTile(
                     leading: const Icon(Icons.article_outlined),
@@ -84,7 +102,14 @@ class _SearchPageState extends State<SearchPage> {
                     isThreeLine: true,
                     trailing: IconButton(
                       icon: const Icon(Icons.bookmark_border),
-                      onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to bookmarks when signed in.'))),
+                      onPressed:
+                          () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Saved to bookmarks when signed in.',
+                              ),
+                            ),
+                          ),
                     ),
                   ),
                 );

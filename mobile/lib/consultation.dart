@@ -14,7 +14,8 @@ class ConsultationPage extends StatefulWidget {
 
 class _ConsultationPageState extends State<ConsultationPage> {
   final _api = ApiClient();
-  List<Map<String, dynamic>> _therapists = sampleTherapists.map(Map<String, dynamic>.from).toList();
+  List<Map<String, dynamic>> _therapists =
+      sampleTherapists.map(Map<String, dynamic>.from).toList();
   bool _loading = false;
 
   @override
@@ -28,17 +29,27 @@ class _ConsultationPageState extends State<ConsultationPage> {
     try {
       final response = await _api.get('/therapists');
       setState(() {
-        _therapists = (response['data'] as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        _therapists =
+            (response['data'] as List)
+                .map((item) => Map<String, dynamic>.from(item as Map))
+                .toList();
       });
     } catch (_) {
-      setState(() => _therapists = sampleTherapists.map(Map<String, dynamic>.from).toList());
+      setState(
+        () =>
+            _therapists =
+                sampleTherapists.map(Map<String, dynamic>.from).toList(),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _showBookingSheet(Map<String, dynamic> therapist) async {
-    final modes = ((therapist['session_modes'] as List?) ?? ['online']).map((value) => value.toString()).toList();
+    final modes =
+        ((therapist['session_modes'] as List?) ?? ['online'])
+            .map((value) => value.toString())
+            .toList();
     String mode = modes.first;
     final reasonController = TextEditingController();
     await showModalBottomSheet<void>(
@@ -48,32 +59,63 @@ class _ConsultationPageState extends State<ConsultationPage> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(therapistName(therapist), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(
+                    therapistName(therapist),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('Choose a session mode. The Laravel API enforces slot locking when a real availability slot is selected.'),
+                  const Text(
+                    'Choose a session mode. The Laravel API enforces slot locking when a real availability slot is selected.',
+                  ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: mode,
-                    items: modes.map((item) => DropdownMenuItem(value: item, child: Text(item.replaceAll('_', ' ')))).toList(),
-                    onChanged: (value) => setSheetState(() => mode = value ?? mode),
-                    decoration: const InputDecoration(labelText: 'Session mode'),
+                    items:
+                        modes
+                            .map(
+                              (item) => DropdownMenuItem(
+                                value: item,
+                                child: Text(item.replaceAll('_', ' ')),
+                              ),
+                            )
+                            .toList(),
+                    onChanged:
+                        (value) => setSheetState(() => mode = value ?? mode),
+                    decoration: const InputDecoration(
+                      labelText: 'Session mode',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: reasonController,
                     maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Reason (optional)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Reason (optional)',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking flow connected to /appointments once a slot is chosen.')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Booking flow connected to /appointments once a slot is chosen.',
+                          ),
+                        ),
+                      );
                     },
                     child: const Text('Continue to slot selection'),
                   ),
@@ -97,19 +139,33 @@ class _ConsultationPageState extends State<ConsultationPage> {
           padding: const EdgeInsets.all(16),
           children: [
             if (_loading) const LinearProgressIndicator(),
-            Text('Verified therapists', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+            Text(
+              'Verified therapists',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 8),
-            const Text('Only approved professionals are shown in this directory.'),
+            const Text(
+              'Only approved professionals are shown in this directory.',
+            ),
             const SizedBox(height: 16),
-            ..._therapists.map((therapist) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _TherapistCard(therapist: therapist, onBook: () => _showBookingSheet(therapist)),
-                )),
+            ..._therapists.map(
+              (therapist) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _TherapistCard(
+                  therapist: therapist,
+                  onBook: () => _showBookingSheet(therapist),
+                ),
+              ),
+            ),
             Card(
               color: serenityWarm,
               child: const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('If you are in immediate danger or need urgent care, contact local emergency services or a trusted crisis support line.'),
+                child: Text(
+                  'If you are in immediate danger or need urgent care, contact local emergency services or a trusted crisis support line.',
+                ),
               ),
             ),
           ],
@@ -130,7 +186,10 @@ class _TherapistCard extends StatelessWidget {
     final specialties = ((therapist['specialties'] as List?) ?? [])
         .map((item) => item is Map ? item['name'].toString() : item.toString())
         .join(', ');
-    final fee = NumberFormat('#,##0', 'en_MW').format(therapist['consultation_fee'] ?? 0);
+    final fee = NumberFormat(
+      '#,##0',
+      'en_MW',
+    ).format(therapist['consultation_fee'] ?? 0);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -148,18 +207,28 @@ class _TherapistCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(therapistName(therapist), style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(
+                        therapistName(therapist),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                       Text('${therapist['location'] ?? 'Remote'} • MWK $fee'),
                     ],
                   ),
                 ),
-                const Tooltip(message: 'Verified therapist', child: Icon(Icons.verified, color: serenityTeal)),
+                const Tooltip(
+                  message: 'Verified therapist',
+                  child: Icon(Icons.verified, color: serenityTeal),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Text(specialties.isEmpty ? 'Mental wellness support' : specialties),
             const SizedBox(height: 12),
-            ElevatedButton.icon(onPressed: onBook, icon: const Icon(Icons.event_available), label: const Text('Book session')),
+            ElevatedButton.icon(
+              onPressed: onBook,
+              icon: const Icon(Icons.event_available),
+              label: const Text('Book session'),
+            ),
           ],
         ),
       ),

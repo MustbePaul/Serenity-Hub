@@ -10,9 +10,7 @@ class LoadingIndicator extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CircularProgressIndicator(
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
         const SizedBox(height: 16),
         Text(
           'Searching...',

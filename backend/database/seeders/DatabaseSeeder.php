@@ -3,12 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\AvailabilitySlot;
+use App\Models\MediaAsset;
 use App\Models\QuoteAffirmation;
 use App\Models\Resource;
 use App\Models\ResourceCategory;
 use App\Models\Specialty;
 use App\Models\TherapistProfile;
 use App\Models\User;
+use App\Models\WellnessSession;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -79,6 +81,60 @@ class DatabaseSeeder extends Seeder
             ['text' => 'I can take one steady breath and begin again.', 'author' => null, 'theme' => 'calm', 'type' => 'affirmation'],
         ] as $quote) {
             QuoteAffirmation::firstOrCreate(['text' => $quote['text']], [...$quote, 'active' => true, 'display_date' => now()->toDateString(), 'created_by' => $admin->id]);
+        }
+
+        $mediaAssets = collect([
+            ['title' => 'Three-minute breathing reset', 'media_type' => 'audio', 'duration_seconds' => 180, 'category' => 'stress', 'description' => 'A short paced breathing practice for pressure-filled moments.', 'transcript' => 'Settle your shoulders. Breathe in gently for four counts, hold softly, and breathe out with patience.'],
+            ['title' => 'Grounding through the senses', 'media_type' => 'audio', 'duration_seconds' => 300, 'category' => 'anxiety', 'description' => 'A guided 5-4-3-2-1 sensory grounding session.', 'transcript' => 'Notice five things you can see, four things you can feel, and let your attention return to the room.'],
+            ['title' => 'Soft evening wind-down', 'media_type' => 'audio', 'duration_seconds' => 420, 'category' => 'sleep', 'description' => 'A calm routine for easing into rest.', 'transcript' => 'Let the day be complete enough. Follow your breath and give your body permission to rest.'],
+            ['title' => 'Desk stretch for stress relief', 'media_type' => 'video', 'duration_seconds' => 360, 'category' => 'stress', 'description' => 'Simple seated movement to release tension.', 'transcript' => 'Move slowly, stay within comfort, and pair each stretch with a steady breath.'],
+            ['title' => 'A quiet gratitude reflection', 'media_type' => 'video', 'duration_seconds' => 240, 'category' => 'self-care', 'description' => 'A short reflection for noticing one supportive moment.', 'transcript' => 'Think of one small kindness or steady place from today and let it be enough for this moment.'],
+        ])->map(function ($media, $index) use ($admin, $categories) {
+            $asset = MediaAsset::firstOrCreate(
+                ['title' => $media['title']],
+                [
+                    'description' => $media['description'],
+                    'media_type' => $media['media_type'],
+                    'file_url' => "https://example.com/serenity/{$media['media_type']}-".($index + 1).($media['media_type'] === 'audio' ? '.mp3' : '.mp4'),
+                    'thumbnail_url' => "https://picsum.photos/seed/serenity-{$index}/640/360",
+                    'duration_seconds' => $media['duration_seconds'],
+                    'language' => 'en',
+                    'transcript' => $media['transcript'],
+                    'status' => 'published',
+                    'created_by' => $admin->id,
+                ],
+            );
+
+            $resource = Resource::where('category_id', $categories->firstWhere('slug', $media['category'])?->id)->first();
+            if ($resource) {
+                $asset->resources()->syncWithoutDetaching([$resource->id => ['sort_order' => $index]]);
+            }
+
+            return $asset;
+        });
+
+        foreach ([
+            ['title' => 'Breathe and Begin Again', 'category' => 'breathing', 'target_mood' => 'anxious', 'media' => 'Three-minute breathing reset', 'featured' => true],
+            ['title' => 'Name the Room', 'category' => 'grounding', 'target_mood' => 'anxious', 'media' => 'Grounding through the senses', 'featured' => true],
+            ['title' => 'Unclench the Day', 'category' => 'stress', 'target_mood' => 'stressed', 'media' => 'Desk stretch for stress relief', 'featured' => false],
+            ['title' => 'Rest Permission', 'category' => 'sleep', 'target_mood' => 'tired', 'media' => 'Soft evening wind-down', 'featured' => true],
+            ['title' => 'One Good Thing', 'category' => 'gratitude', 'target_mood' => 'calm', 'media' => 'A quiet gratitude reflection', 'featured' => false],
+        ] as $sessionSeed) {
+            $asset = $mediaAssets->firstWhere('title', $sessionSeed['media']);
+            WellnessSession::firstOrCreate(
+                ['title' => $sessionSeed['title']],
+                [
+                    'description' => $asset?->description,
+                    'category' => $sessionSeed['category'],
+                    'target_mood' => $sessionSeed['target_mood'],
+                    'difficulty' => 'beginner',
+                    'estimated_duration_seconds' => $asset?->duration_seconds,
+                    'resource_id' => $asset?->resources()->first()?->id,
+                    'media_asset_id' => $asset->id,
+                    'is_featured' => $sessionSeed['featured'],
+                    'status' => 'published',
+                ],
+            );
         }
 
         $specialties = collect([

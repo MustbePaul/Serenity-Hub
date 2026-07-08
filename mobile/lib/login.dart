@@ -33,10 +33,14 @@ class _LoginState extends State<Login> {
         'password': _passwordController.text,
       });
       await _api.saveToken(response['data']['token'].toString());
-      if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/app', (_) => false);
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/app', (_) => false);
+      }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -58,15 +62,26 @@ class _LoginState extends State<Login> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Welcome back', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                    Text(
+                      'Welcome back',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
                     const SizedBox(height: 8),
                     const Text('Use your Serenity Hub account to continue.'),
                     const SizedBox(height: 24),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-                      validator: (value) => value == null || !value.contains('@') ? 'Enter a valid email.' : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      validator:
+                          (value) =>
+                              value == null || !value.contains('@')
+                                  ? 'Enter a valid email.'
+                                  : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -76,22 +91,52 @@ class _LoginState extends State<Login> {
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed:
+                              () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                         ),
                       ),
-                      validator: (value) => value == null || value.length < 8 ? 'Password must be at least 8 characters.' : null,
+                      validator:
+                          (value) =>
+                              value == null || value.length < 8
+                                  ? 'Password must be at least 8 characters.'
+                                  : null,
                       onFieldSubmitted: (_) => _login(),
                     ),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton(onPressed: () => Navigator.pushNamed(context, '/recovery'), child: const Text('Forgot password?')),
+                      child: TextButton(
+                        onPressed:
+                            () => Navigator.pushNamed(context, '/recovery'),
+                        child: const Text('Forgot password?'),
+                      ),
                     ),
                     _isLoading
-                        ? const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
-                        : ElevatedButton(onPressed: _login, child: const Text('Sign in')),
+                        ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                        : ElevatedButton(
+                          onPressed: _login,
+                          child: const Text('Sign in'),
+                        ),
                     const SizedBox(height: 12),
-                    OutlinedButton(onPressed: () => Navigator.pushReplacementNamed(context, '/signup'), child: const Text('Create account')),
+                    OutlinedButton(
+                      onPressed:
+                          () => Navigator.pushReplacementNamed(
+                            context,
+                            '/signup',
+                          ),
+                      child: const Text('Create account'),
+                    ),
                   ],
                 ),
               ),

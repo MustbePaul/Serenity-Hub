@@ -48,56 +48,65 @@ class SearchProvider extends ChangeNotifier {
     final allResults = [
       SearchResult(
         title: 'Article: 5-Minute Techniques to Reduce Anxiety',
-        description: 'A quick guide on deep breathing and visualization exercises to calm your mind.',
+        description:
+            'A quick guide on deep breathing and visualization exercises to calm your mind.',
         metadata: '🕒 Published: 2 days ago | 👀 10.2K views',
         routeName: '/article_anxiety',
         type: 'article',
       ),
       SearchResult(
         title: 'Expert Advice: How to Handle Anxiety Attacks in Public',
-        description: 'One of the best ways to manage sudden anxiety attacks is by focusing on your five senses...',
+        description:
+            'One of the best ways to manage sudden anxiety attacks is by focusing on your five senses...',
         metadata: '👩‍⚕️ Dr. Sarah Thompson | 🏥 Licensed Therapist',
         routeName: '/expert_advice',
         type: 'expert',
       ),
       SearchResult(
         title: 'Community Discussion: What helps you when feeling anxious?',
-        description: 'I find that listening to calming music or stepping outside really helps!',
+        description:
+            'I find that listening to calming music or stepping outside really helps!',
         metadata: '📝 85 Comments | ❤️ 312 Likes',
         routeName: '/community_discussion',
         type: 'community',
       ),
       SearchResult(
         title: 'Video: Guided Meditation for Anxiety Relief (10 mins)',
-        description: 'Listen to this calming meditation to relax your thoughts.',
+        description:
+            'Listen to this calming meditation to relax your thoughts.',
         metadata: '▶️ YouTube | 15.6K Views',
         routeName: '/meditation_video',
         type: 'video',
       ),
       SearchResult(
         title: 'Article: Understanding Sleep Anxiety',
-        description: 'Learn why anxiety can impact your sleep and practical strategies to address it.',
+        description:
+            'Learn why anxiety can impact your sleep and practical strategies to address it.',
         metadata: '🕒 Published: 1 week ago | 👀 8.7K views',
         routeName: '/article_sleep_anxiety',
         type: 'article',
       ),
       SearchResult(
         title: 'Video: Mindfulness Practices for Daily Life',
-        description: 'Simple mindfulness techniques you can incorporate into your everyday routine.',
+        description:
+            'Simple mindfulness techniques you can incorporate into your everyday routine.',
         metadata: '▶️ YouTube | 22.3K Views',
         routeName: '/mindfulness_video',
         type: 'video',
       ),
       SearchResult(
         title: 'Expert Advice: Cognitive Behavioral Techniques for Depression',
-        description: 'Evidence-based CBT approaches that can help manage depression symptoms.',
+        description:
+            'Evidence-based CBT approaches that can help manage depression symptoms.',
         metadata: '👨‍⚕️ Dr. Michael Chen | 🏥 Clinical Psychologist',
         routeName: '/expert_depression',
         type: 'expert',
       ),
       SearchResult(
-        title: 'Community Discussion: Self-care routines that changed your life',
-        description: 'Share and discover self-care practices that have made a significant impact.',
+        title:
+            'Community Discussion: Self-care routines that changed your life',
+        description:
+            'Share and discover self-care practices that have made a significant impact.',
         metadata: '📝 126 Comments | ❤️ 489 Likes',
         routeName: '/community_selfcare',
         type: 'community',
