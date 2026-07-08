@@ -83,20 +83,69 @@ class DatabaseSeeder extends Seeder
             QuoteAffirmation::firstOrCreate(['text' => $quote['text']], [...$quote, 'active' => true, 'display_date' => now()->toDateString(), 'created_by' => $admin->id]);
         }
 
+        MediaAsset::query()
+            ->where('file_url', 'like', 'https://example.com/serenity/%')
+            ->delete();
+
         $mediaAssets = collect([
-            ['title' => 'Three-minute breathing reset', 'media_type' => 'audio', 'duration_seconds' => 180, 'category' => 'stress', 'description' => 'A short paced breathing practice for pressure-filled moments.', 'transcript' => 'Settle your shoulders. Breathe in gently for four counts, hold softly, and breathe out with patience.'],
-            ['title' => 'Grounding through the senses', 'media_type' => 'audio', 'duration_seconds' => 300, 'category' => 'anxiety', 'description' => 'A guided 5-4-3-2-1 sensory grounding session.', 'transcript' => 'Notice five things you can see, four things you can feel, and let your attention return to the room.'],
-            ['title' => 'Soft evening wind-down', 'media_type' => 'audio', 'duration_seconds' => 420, 'category' => 'sleep', 'description' => 'A calm routine for easing into rest.', 'transcript' => 'Let the day be complete enough. Follow your breath and give your body permission to rest.'],
-            ['title' => 'Desk stretch for stress relief', 'media_type' => 'video', 'duration_seconds' => 360, 'category' => 'stress', 'description' => 'Simple seated movement to release tension.', 'transcript' => 'Move slowly, stay within comfort, and pair each stretch with a steady breath.'],
-            ['title' => 'A quiet gratitude reflection', 'media_type' => 'video', 'duration_seconds' => 240, 'category' => 'self-care', 'description' => 'A short reflection for noticing one supportive moment.', 'transcript' => 'Think of one small kindness or steady place from today and let it be enough for this moment.'],
+            [
+                'title' => 'Namaste calming audio',
+                'media_type' => 'audio',
+                'file_url' => 'https://audionautix.com/Music/Namaste.mp3',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=960&q=80',
+                'duration_seconds' => 245,
+                'category' => 'stress',
+                'description' => 'A slow meditative music track for breathing, grounding, and quiet focus.',
+                'transcript' => 'Instrumental meditative music by Jason Shaw/AudionautiX. Try pairing the track with slow breathing and relaxed shoulders.',
+            ],
+            [
+                'title' => 'Navajo Night long rest audio',
+                'media_type' => 'audio',
+                'file_url' => 'https://audionautix.com/Music/NavajoNight.mp3',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=960&q=80',
+                'duration_seconds' => 1440,
+                'category' => 'sleep',
+                'description' => 'A longer meditative music track suited to rest, sleep preparation, or reflection.',
+                'transcript' => 'Instrumental meditative music by Jason Shaw/AudionautiX. Let the track support a slower evening rhythm.',
+            ],
+            [
+                'title' => 'Ohm grounding audio',
+                'media_type' => 'audio',
+                'file_url' => 'https://audionautix.com/Music/Ohm.mp3',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=960&q=80',
+                'duration_seconds' => 369,
+                'category' => 'anxiety',
+                'description' => 'A spacious meditative track for anxious moments and sensory grounding.',
+                'transcript' => 'Instrumental meditative music by Jason Shaw/AudionautiX. Notice your breath, your seat, and the sounds around you.',
+            ],
+            [
+                'title' => 'Flower focus video',
+                'media_type' => 'video',
+                'file_url' => 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=960&q=80',
+                'duration_seconds' => 5,
+                'category' => 'self-care',
+                'description' => 'A short visual pause for mindful attention and gentle reset.',
+                'transcript' => 'Watch the motion and color for a few breaths. Let your attention rest on one simple visual detail.',
+            ],
+            [
+                'title' => 'Sintel visual pause',
+                'media_type' => 'video',
+                'file_url' => 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+                'thumbnail_url' => 'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=960&q=80',
+                'duration_seconds' => 52,
+                'category' => 'stress',
+                'description' => 'A brief public demo video used here to exercise video playback and progress tracking.',
+                'transcript' => 'Use this video as a short visual pause. If the imagery feels activating, stop and choose an audio session instead.',
+            ],
         ])->map(function ($media, $index) use ($admin, $categories) {
-            $asset = MediaAsset::firstOrCreate(
+            $asset = MediaAsset::updateOrCreate(
                 ['title' => $media['title']],
                 [
                     'description' => $media['description'],
                     'media_type' => $media['media_type'],
-                    'file_url' => "https://example.com/serenity/{$media['media_type']}-".($index + 1).($media['media_type'] === 'audio' ? '.mp3' : '.mp4'),
-                    'thumbnail_url' => "https://picsum.photos/seed/serenity-{$index}/640/360",
+                    'file_url' => $media['file_url'],
+                    'thumbnail_url' => $media['thumbnail_url'],
                     'duration_seconds' => $media['duration_seconds'],
                     'language' => 'en',
                     'transcript' => $media['transcript'],
@@ -114,14 +163,14 @@ class DatabaseSeeder extends Seeder
         });
 
         foreach ([
-            ['title' => 'Breathe and Begin Again', 'category' => 'breathing', 'target_mood' => 'anxious', 'media' => 'Three-minute breathing reset', 'featured' => true],
-            ['title' => 'Name the Room', 'category' => 'grounding', 'target_mood' => 'anxious', 'media' => 'Grounding through the senses', 'featured' => true],
-            ['title' => 'Unclench the Day', 'category' => 'stress', 'target_mood' => 'stressed', 'media' => 'Desk stretch for stress relief', 'featured' => false],
-            ['title' => 'Rest Permission', 'category' => 'sleep', 'target_mood' => 'tired', 'media' => 'Soft evening wind-down', 'featured' => true],
-            ['title' => 'One Good Thing', 'category' => 'gratitude', 'target_mood' => 'calm', 'media' => 'A quiet gratitude reflection', 'featured' => false],
+            ['title' => 'Breathe and Begin Again', 'category' => 'breathing', 'target_mood' => 'anxious', 'media' => 'Namaste calming audio', 'featured' => true],
+            ['title' => 'Name the Room', 'category' => 'grounding', 'target_mood' => 'anxious', 'media' => 'Ohm grounding audio', 'featured' => true],
+            ['title' => 'Visual Reset', 'category' => 'stress', 'target_mood' => 'stressed', 'media' => 'Sintel visual pause', 'featured' => false],
+            ['title' => 'Rest Permission', 'category' => 'sleep', 'target_mood' => 'tired', 'media' => 'Navajo Night long rest audio', 'featured' => true],
+            ['title' => 'One Good Thing', 'category' => 'gratitude', 'target_mood' => 'calm', 'media' => 'Flower focus video', 'featured' => false],
         ] as $sessionSeed) {
             $asset = $mediaAssets->firstWhere('title', $sessionSeed['media']);
-            WellnessSession::firstOrCreate(
+            WellnessSession::updateOrCreate(
                 ['title' => $sessionSeed['title']],
                 [
                     'description' => $asset?->description,

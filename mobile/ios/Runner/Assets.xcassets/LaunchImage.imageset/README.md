@@ -9,3 +9,5 @@ open ios/Runner.xcworkspace
 ```
 
 Then select `Runner/Assets.xcassets` in Xcode and drop in the desired launch images.
+
+The Serenity Hub audio/video library does not use this asset bundle. Development media is seeded by the Laravel backend as remote HTTPS URLs.

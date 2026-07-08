@@ -1,6 +1,6 @@
 # Serenity Hub Mobile
 
-Flutter client for Serenity Hub, a mental wellness app for daily grounding, self-care resources, therapist consultations, appointment scheduling, bookmarks, profiles, settings, and support.
+Flutter client for Serenity Hub, a mental wellness app for daily grounding, self-care resources, audio/video serenity sessions, media playback, progress tracking, therapist consultations, appointment scheduling, bookmarks, profiles, settings, and support.
 
 ## Structure
 
@@ -30,6 +30,11 @@ mobile/
 
 - Welcome, sign in, sign up, and account recovery
 - Home dashboard
+- Library for articles, audio resources, and video resources
+- Guided serenity sessions with category filters
+- Audio playback through `just_audio`
+- Video playback through `video_player`
+- Continue-progress and mood-based recommendation cards
 - Resource search and browsing
 - Therapist consultation flow
 - Schedule and reminders
@@ -66,6 +71,8 @@ flutter run -d chrome --no-web-resources-cdn
 
 The app bundles `assets/fonts/Roboto-Regular.ttf`, so the web target can start without fetching Roboto from `fonts.gstatic.com`.
 
+Seeded media streams from public HTTPS URLs. For Android emulator testing, make sure your backend API URL uses `10.0.2.2`, but media files still load directly from the internet.
+
 ## Backend API
 
 The Flutter API client uses:
@@ -94,11 +101,18 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 - `flutter_local_notifications` for local reminders
 - `url_launcher` for opening external links
 - `image_picker` for profile/media selection
+- `just_audio` for audio session playback
+- `video_player` for video session playback
 - `in_app_purchase`, `otp`, and `mobile_scanner` for planned commerce, verification, and scanning flows
 - `intl` and `flutter_localizations` for localization-ready UI
+
+## Multimedia Flow
+
+The Library tab combines Laravel `/media` results with existing `/resources` articles. The Sessions tab uses `/wellness-sessions`. Audio and video screens save playback progress to `/media/{media}/progress` about every 20 seconds and when leaving the screen. Home uses `/me/recommendations` and `/me/media-progress` when the user is signed in.
 
 ## Tests
 
 ```bash
+flutter analyze
 flutter test
 ```
