@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
 
@@ -136,6 +137,29 @@ class _LoginState extends State<Login> {
                             '/signup',
                           ),
                       child: const Text('Create account'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('offline_guest', true);
+                        if (context.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/app',
+                            (_) => false,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.offline_bolt_outlined),
+                      label: const Text('Continue with offline essentials'),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        'No account or data bundle needed. Online care and syncing remain unavailable.',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ],
                 ),

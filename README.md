@@ -117,6 +117,29 @@ Override it at build/run time with:
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
+For an APK shared outside your local network, use the public HTTPS API URL at
+build time. Do not use `127.0.0.1` in a reviewer build:
+
+```bash
+cd mobile
+flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain.example/api/v1
+```
+
+Public GET responses are cached on-device for later offline use. The app also
+ships with a small set of text-based grounding and safety resources so a new
+user can select **Continue with offline essentials** before ever connecting.
+Authentication, booking, support tickets, sync, and streamed audio/video still
+require connectivity.
+
+## USSD prototype
+
+The welcome screen includes a local USSD menu preview. The backend also exposes
+`POST /api/ussd`, accepting common aggregator fields such as `sessionId`,
+`serviceCode`, `phoneNumber`, and `text`, and returns `CON`/`END` plain text.
+This is only a technical prototype: a public shortcode requires MACRA/operator
+or approved aggregator provisioning, privacy review, verified care-directory
+content, and operational safeguarding before real users are invited to use it.
+
 ## Test Accounts
 
 After running `php artisan migrate --seed`, the backend includes local development accounts:

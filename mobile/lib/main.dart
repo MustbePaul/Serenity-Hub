@@ -7,6 +7,7 @@ import 'recovery.dart';
 import 'search.dart';
 import 'serenity_theme.dart';
 import 'signup.dart';
+import 'ussd_prototype.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,7 @@ class SerenityHubApp extends StatelessWidget {
         '/profile': (context) => const AppShell(initialIndex: 4),
         '/search': (context) => const AppShell(initialIndex: 1),
         '/resource-search': (context) => const SearchPage(),
+        '/ussd-prototype': (context) => const UssdPrototypePage(),
       },
     );
   }
@@ -103,6 +105,12 @@ class WelcomeScreen extends StatelessWidget {
               OutlinedButton(
                 onPressed: () => Navigator.pushNamed(context, '/signup'),
                 child: const Text('Create account'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed:
+                    () => Navigator.pushNamed(context, '/ussd-prototype'),
+                child: const Text('Preview low-data USSD service'),
               ),
             ],
           ),

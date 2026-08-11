@@ -72,6 +72,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   },
                 ),
                 if (provider.loading) const LinearProgressIndicator(),
+                if (provider.usingOfflineContent)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.offline_bolt_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Offline essentials — reconnect to refresh the full library.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _load,

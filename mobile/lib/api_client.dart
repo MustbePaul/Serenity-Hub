@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,22 +153,47 @@ class ApiClient {
       if (authToken != null) 'Authorization': 'Bearer $authToken',
     };
 
-    final response = switch (method) {
-      'POST' => await _httpClient.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body ?? {}),
-      ),
-      'DELETE' => await _httpClient.delete(uri, headers: headers),
-      _ => await _httpClient.get(uri, headers: headers),
-    };
+    try {
+      final response = switch (method) {
+        'POST' => await _httpClient
+            .post(uri, headers: headers, body: jsonEncode(body ?? {}))
+            .timeout(const Duration(seconds: 15)),
+        'DELETE' => await _httpClient
+            .delete(uri, headers: headers)
+            .timeout(const Duration(seconds: 15)),
+        _ => await _httpClient
+            .get(uri, headers: headers)
+            .timeout(const Duration(seconds: 15)),
+      };
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    if (response.statusCode >= 400) {
-      throw ApiException(decoded['message']?.toString() ?? 'Request failed');
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode >= 400) {
+        throw ApiException(decoded['message']?.toString() ?? 'Request failed');
+      }
+      if (method == 'GET') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_cacheKey(uri), response.body);
+      }
+      return decoded;
+    } on ApiException {
+      rethrow;
+    } on Object catch (error) {
+      if (method == 'GET') {
+        final prefs = await SharedPreferences.getInstance();
+        final cached = prefs.getString(_cacheKey(uri));
+        if (cached != null) {
+          return jsonDecode(cached) as Map<String, dynamic>;
+        }
+      }
+      if (error is SocketException || error is TimeoutException) {
+        throw ApiException('No connection and no saved copy is available yet.');
+      }
+      throw ApiException('Could not reach Serenity Hub. Please try again.');
     }
-    return decoded;
   }
+
+  String _cacheKey(Uri uri) =>
+      'api_cache_${base64Url.encode(utf8.encode(uri.toString()))}';
 
   String _withQuery(String path, Map<String, String> params) {
     if (params.isEmpty) return path;

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\MediaProgressController;
 use App\Http\Controllers\Api\V1\RecommendationController;
 use App\Http\Controllers\Api\V1\WellnessSessionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UssdController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -14,6 +15,10 @@ Route::get('/health', function () {
         'service' => 'serenity-hub-api',
     ]);
 });
+
+// Provider-agnostic prototype callback. Configure an approved aggregator to POST
+// sessionId, serviceCode, phoneNumber, and text here after shortcode provisioning.
+Route::post('/ussd', [UssdController::class, 'handle']);
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
