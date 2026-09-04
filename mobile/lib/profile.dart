@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'api_client.dart';
+import 'appointment_history.dart';
 import 'edit_profile.dart';
+import 'guest_mode.dart';
 import 'help_support.dart';
 import 'settings.dart';
 import 'serenity_theme.dart';
@@ -17,6 +19,7 @@ class _ProfileState extends State<Profile> {
   final _api = ApiClient();
   Map<String, dynamic>? _user;
   bool _loading = true;
+  bool _guestMode = false;
 
   @override
   void initState() {
@@ -26,17 +29,23 @@ class _ProfileState extends State<Profile> {
 
   Future<void> _loadProfile() async {
     setState(() => _loading = true);
+    final guestMode = await GuestMode.isEnabled();
     try {
       final response = await _api.get('/auth/me');
-      setState(
-        () => _user = Map<String, dynamic>.from(response['data'] as Map),
-      );
+      setState(() {
+        _guestMode = guestMode;
+        _user = Map<String, dynamic>.from(response['data'] as Map);
+      });
     } catch (_) {
       setState(() {
+        _guestMode = guestMode;
         _user = {
-          'name': 'Serenity User',
-          'email': 'user@serenityhub.test',
-          'role': 'user',
+          'name': guestMode ? 'Guest Reviewer' : 'Serenity User',
+          'email':
+              guestMode
+                  ? 'guest-review@serenityhub.test'
+                  : 'user@serenityhub.test',
+          'role': guestMode ? 'reviewer' : 'user',
         };
       });
     } finally {
@@ -111,14 +120,28 @@ class _ProfileState extends State<Profile> {
                     _ProfileTile(
                       icon: Icons.edit_outlined,
                       title: 'Edit profile',
-                      onTap:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const EditProfilePage(),
-                            ),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditProfilePage(currentUser: user),
                           ),
+                        );
+                        if (mounted) _loadProfile();
+                      },
                     ),
+                    if (_guestMode) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        color: serenityBlue,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                            'Guest review mode is active. Profile changes and appointments are preview-only.',
+                          ),
+                        ),
+                      ),
+                    ],
                     _ProfileTile(
                       icon: Icons.notifications_outlined,
                       title: 'Settings and privacy',
@@ -145,11 +168,10 @@ class _ProfileState extends State<Profile> {
                       icon: Icons.event_note_outlined,
                       title: 'Appointment history',
                       onTap:
-                          () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Appointment history uses /appointments in the next pass.',
-                              ),
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AppointmentHistoryPage(),
                             ),
                           ),
                     ),
@@ -167,7 +189,7 @@ class _ProfileState extends State<Profile> {
                     OutlinedButton.icon(
                       onPressed: _logout,
                       icon: const Icon(Icons.logout),
-                      label: const Text('Log out'),
+                      label: Text(_guestMode ? 'Exit guest review' : 'Log out'),
                     ),
                   ],
                 ),

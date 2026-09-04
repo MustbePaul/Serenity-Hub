@@ -73,12 +73,18 @@ The app bundles `assets/fonts/Roboto-Regular.ttf`, so the web target can start w
 
 Seeded media streams from public HTTPS URLs. For Android emulator testing, make sure your backend API URL uses `10.0.2.2`, but media files still load directly from the internet.
 
+## Guest Review Mode
+
+Use **Review as guest** from the welcome or sign-in screen when a reviewer does not have access to the Laravel backend. Guest review mode clears any saved API token, skips live API calls, and uses built-in sample resources, therapist profiles, recommendations, and guided text sessions.
+
+This mode is intended for product and therapy-workflow review. It disables live account syncing and appointment creation, while still allowing the reviewer to browse the app, inspect safety wording, preview therapist booking steps, and open self-care content without network or backend setup.
+
 ## Backend API
 
 The Flutter API client uses:
 
 ```text
-http://127.0.0.1:8000/api/v1
+http://10.0.2.2:8000/api/v1
 ```
 
 Override the API base URL with a Dart define:
@@ -93,6 +99,13 @@ For Android emulators, you may need to point at the host machine instead:
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 ```
 
+Reviewer, staging, and production APKs should provide the public HTTPS API URL
+at build time:
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain.example/api/v1
+```
+
 ## Main Dependencies
 
 - `provider` for state management
@@ -103,7 +116,6 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 - `image_picker` for profile/media selection
 - `just_audio` for audio session playback
 - `video_player` for video session playback
-- `in_app_purchase`, `otp`, and `mobile_scanner` for planned commerce, verification, and scanning flows
 - `intl` and `flutter_localizations` for localization-ready UI
 
 ## Multimedia Flow

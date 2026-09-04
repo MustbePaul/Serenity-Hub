@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'audio_player_screen.dart';
+import 'media_detail_screen.dart';
 import 'models/wellness_session.dart';
 import 'providers/session_provider.dart';
 import 'video_player_screen.dart';
@@ -61,6 +62,21 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   },
                 ),
                 if (provider.loading) const LinearProgressIndicator(),
+                if (provider.usingOfflineContent)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.visibility_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Guest review sessions are loaded from built-in content.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _load,
@@ -119,7 +135,9 @@ class _SessionsScreenState extends State<SessionsScreen> {
     final page =
         media.isVideo
             ? VideoPlayerScreen(media: media, session: session)
-            : AudioPlayerScreen(media: media, session: session);
+            : media.isAudio
+            ? AudioPlayerScreen(media: media, session: session)
+            : MediaDetailScreen(media: media);
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 }

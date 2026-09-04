@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\MediaProgressController;
 use App\Http\Controllers\Api\V1\RecommendationController;
 use App\Http\Controllers\Api\V1\WellnessSessionController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UssdController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
     return response()->json([
@@ -38,6 +38,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/home', [AppContentController::class, 'home']);
+        Route::get('/appointments', [AppContentController::class, 'appointments']);
+        Route::patch('/profile', [AppContentController::class, 'updateProfile']);
         Route::get('/bookmarks', [AppContentController::class, 'bookmarks']);
         Route::post('/resources/{resource}/bookmark', [AppContentController::class, 'bookmark']);
         Route::delete('/resources/{resource}/bookmark', [AppContentController::class, 'removeBookmark']);

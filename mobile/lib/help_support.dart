@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'api_client.dart';
+
 class HelpSupportPage extends StatefulWidget {
   const HelpSupportPage({super.key});
 
@@ -10,6 +12,7 @@ class HelpSupportPage extends StatefulWidget {
 
 class _HelpSupportPageState extends State<HelpSupportPage>
     with SingleTickerProviderStateMixin {
+  final _api = ApiClient();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -47,14 +50,14 @@ class _HelpSupportPageState extends State<HelpSupportPage>
         _isSubmitting = true;
       });
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
-
-      setState(() {
-        _isSubmitting = false;
-      });
-
-      if (mounted) {
+      try {
+        await _api.submitSupportTicket(
+          subject: _selectedCategory,
+          message:
+              '${_messageController.text.trim()}\n\nContact: ${_nameController.text.trim()} <${_emailController.text.trim()}>',
+          priority: _isUrgent ? 'urgent' : 'normal',
+        );
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -78,6 +81,28 @@ class _HelpSupportPageState extends State<HelpSupportPage>
           _selectedCategory = 'General Inquiry';
           _isUrgent = false;
         });
+      } on ApiException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error.message)));
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'We could not complete your request. Please try again.',
+              ),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
       }
     }
   }

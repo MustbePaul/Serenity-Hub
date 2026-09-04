@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
+import 'guest_mode.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -141,8 +141,7 @@ class _LoginState extends State<Login> {
                     const SizedBox(height: 12),
                     TextButton.icon(
                       onPressed: () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('offline_guest', true);
+                        await GuestMode.startReview();
                         if (context.mounted) {
                           Navigator.pushNamedAndRemoveUntil(
                             context,
@@ -151,13 +150,13 @@ class _LoginState extends State<Login> {
                           );
                         }
                       },
-                      icon: const Icon(Icons.offline_bolt_outlined),
-                      label: const Text('Continue with offline essentials'),
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: const Text('Review as guest'),
                     ),
                     const Padding(
                       padding: EdgeInsets.only(top: 4),
                       child: Text(
-                        'No account or data bundle needed. Online care and syncing remain unavailable.',
+                        'No backend needed. Uses built-in demo content and disables live account actions.',
                         textAlign: TextAlign.center,
                       ),
                     ),

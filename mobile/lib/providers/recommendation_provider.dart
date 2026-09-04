@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../api_client.dart';
 import '../models/media_progress.dart';
 import '../models/recommendation.dart';
+import '../offline_content.dart';
 
 class RecommendationProvider extends ChangeNotifier {
   RecommendationProvider({ApiClient? apiClient})
@@ -26,8 +27,8 @@ class RecommendationProvider extends ChangeNotifier {
       recommendation = results[0] as Recommendation;
       progress = results[1] as List<MediaProgress>;
     } catch (_) {
-      error = 'Personal recommendations need sign in and a live connection.';
-      recommendation = null;
+      error = null;
+      recommendation = offlineRecommendation;
       progress = [];
     } finally {
       loading = false;

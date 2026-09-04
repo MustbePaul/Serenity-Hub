@@ -15,12 +15,14 @@ class _SearchPageState extends State<SearchPage> {
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _resources =
       sampleResources.map(Map<String, dynamic>.from).toList();
+  final Set<int> _bookmarkedIds = {};
   bool _loading = false;
 
   @override
   void initState() {
     super.initState();
     _loadResources();
+    _loadBookmarks();
   }
 
   @override
@@ -61,6 +63,94 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
+  Future<void> _loadBookmarks() async {
+    try {
+      final bookmarks = await _api.fetchBookmarks();
+      setState(() {
+        _bookmarkedIds
+          ..clear()
+          ..addAll(
+            bookmarks
+                .map((bookmark) {
+                  final resource = bookmark['resource'];
+                  return resource is Map
+                      ? _asInt(resource['id'])
+                      : _asInt(bookmark['resource_id']);
+                })
+                .where((id) => id != 0),
+          );
+      });
+    } catch (_) {
+      // Public resources remain usable when personal bookmarks are unavailable.
+    }
+  }
+
+  Future<void> _toggleBookmark(Map<String, dynamic> resource) async {
+    final id = _asInt(resource['id']);
+    if (id == 0) return;
+    final wasBookmarked = _bookmarkedIds.contains(id);
+    setState(() {
+      if (wasBookmarked) {
+        _bookmarkedIds.remove(id);
+      } else {
+        _bookmarkedIds.add(id);
+      }
+    });
+    try {
+      if (wasBookmarked) {
+        await _api.removeBookmark(id);
+      } else {
+        await _api.addBookmark(id);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(wasBookmarked ? 'Bookmark removed.' : 'Saved.'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        if (wasBookmarked) {
+          _bookmarkedIds.add(id);
+        } else {
+          _bookmarkedIds.remove(id);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'We could not update bookmarks. Please sign in and try again.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _openResource(Map<String, dynamic> resource) {
+    showDialog<void>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(resource['title']?.toString() ?? 'Resource'),
+            content: SingleChildScrollView(
+              child: Text(
+                resource['body']?.toString() ??
+                    resource['summary']?.toString() ??
+                    '',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,22 +184,21 @@ class _SearchPageState extends State<SearchPage> {
                     resource['category'] is Map
                         ? resource['category']['name']?.toString()
                         : 'Resource';
+                final bookmarked = _bookmarkedIds.contains(
+                  _asInt(resource['id']),
+                );
                 return Card(
                   child: ListTile(
                     leading: const Icon(Icons.article_outlined),
                     title: Text(resource['title']?.toString() ?? ''),
-                    subtitle: Text('$category • ${resource['summary'] ?? ''}'),
+                    subtitle: Text('$category - ${resource['summary'] ?? ''}'),
                     isThreeLine: true,
+                    onTap: () => _openResource(resource),
                     trailing: IconButton(
-                      icon: const Icon(Icons.bookmark_border),
-                      onPressed:
-                          () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Saved to bookmarks when signed in.',
-                              ),
-                            ),
-                          ),
+                      icon: Icon(
+                        bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                      ),
+                      onPressed: () => _toggleBookmark(resource),
                     ),
                   ),
                 );
@@ -120,4 +209,10 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
+}
+
+int _asInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api_client.dart';
 import '../models/wellness_session.dart';
+import '../offline_content.dart';
 
 class SessionProvider extends ChangeNotifier {
   SessionProvider({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -10,6 +11,7 @@ class SessionProvider extends ChangeNotifier {
   List<WellnessSession> sessions = [];
   bool loading = false;
   String? error;
+  bool usingOfflineContent = false;
 
   List<WellnessSession> get featured =>
       sessions.where((session) => session.isFeatured).toList();
@@ -17,6 +19,7 @@ class SessionProvider extends ChangeNotifier {
   Future<void> load({String? category, String? mood, bool? featured}) async {
     loading = true;
     error = null;
+    usingOfflineContent = false;
     notifyListeners();
     try {
       sessions = await _api.fetchWellnessSessions(
@@ -25,7 +28,15 @@ class SessionProvider extends ChangeNotifier {
         featured: featured,
       );
     } catch (_) {
-      error = 'We could not load serenity sessions right now.';
+      final wanted = category ?? 'all';
+      sessions =
+          offlineSessions
+              .where((session) => wanted == 'all' || session.category == wanted)
+              .toList();
+      usingOfflineContent = true;
+      if (sessions.isEmpty) {
+        error = 'This session category is not saved for guest review yet.';
+      }
     } finally {
       loading = false;
       notifyListeners();

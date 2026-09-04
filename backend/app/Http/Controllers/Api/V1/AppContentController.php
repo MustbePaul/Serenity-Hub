@@ -103,7 +103,23 @@ class AppContentController extends ApiController
     {
         abort_unless($therapist->verification_status === 'approved', 404);
 
-        return $this->success($therapist->availabilitySlots()->where('status', 'available')->orderBy('starts_at')->get());
+        $slots = $therapist->availabilitySlots()
+            ->where('status', 'available')
+            ->where('starts_at', '>=', now())
+            ->when(request()->query('date'), fn ($query, $date) => $query->whereDate('starts_at', $date))
+            ->orderBy('starts_at')
+            ->get();
+
+        return $this->success($slots);
+    }
+
+    public function appointments(Request $request)
+    {
+        return $this->success(Appointment::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['therapist.user:id,name,email', 'availabilitySlot'])
+            ->orderByDesc('scheduled_start')
+            ->get());
     }
 
     public function book(Request $request)
@@ -116,9 +132,23 @@ class AppContentController extends ApiController
         ]);
 
         $appointment = DB::transaction(function () use ($request, $data) {
+            $therapist = TherapistProfile::whereKey($data['therapist_id'])
+                ->where('verification_status', 'approved')
+                ->firstOrFail();
             $slot = AvailabilitySlot::whereKey($data['availability_slot_id'])->lockForUpdate()->firstOrFail();
 
-            if ($slot->status !== 'available' || (int) $slot->therapist_id !== (int) $data['therapist_id']) {
+            if ($slot->status !== 'available' || (int) $slot->therapist_id !== (int) $therapist->id || $slot->starts_at->isPast()) {
+                abort(409, 'This time slot is no longer available.');
+            }
+
+            $hasOverlap = Appointment::query()
+                ->where('therapist_id', $therapist->id)
+                ->whereIn('status', ['pending', 'confirmed'])
+                ->where('scheduled_start', '<', $slot->ends_at)
+                ->where('scheduled_end', '>', $slot->starts_at)
+                ->exists();
+
+            if ($hasOverlap) {
                 abort(409, 'This time slot is no longer available.');
             }
 
@@ -126,17 +156,46 @@ class AppContentController extends ApiController
 
             return Appointment::create([
                 'user_id' => $request->user()->id,
-                'therapist_id' => $data['therapist_id'],
+                'therapist_id' => $therapist->id,
                 'availability_slot_id' => $slot->id,
                 'scheduled_start' => $slot->starts_at,
                 'scheduled_end' => $slot->ends_at,
                 'mode' => $data['mode'],
                 'reason' => $data['reason'] ?? null,
                 'status' => 'confirmed',
-            ]);
+            ])->load(['therapist.user:id,name,email', 'availabilitySlot']);
         });
 
         return $this->success($appointment, 'Appointment booked successfully.', status: 201);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'gender' => ['nullable', 'string', 'max:50'],
+            'date_of_birth' => ['nullable', 'date'],
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_phone' => ['nullable', 'string', 'max:50'],
+            'avatar_url' => ['nullable', 'url', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        $user->update(['name' => $data['name']]);
+
+        $profileData = collect($data)->except('name')->all();
+        $profile = $user->profile()->updateOrCreate(['user_id' => $user->id], $profileData);
+
+        return $this->success([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'status' => $user->status,
+            'profile' => $profile,
+            'settings' => $user->settings,
+        ], 'Profile updated.');
     }
 
     public function mood(Request $request)

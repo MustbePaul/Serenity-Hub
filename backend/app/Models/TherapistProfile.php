@@ -33,4 +33,9 @@ class TherapistProfile extends Model
     {
         return $this->hasMany(AvailabilitySlot::class, 'therapist_id');
     }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'therapist_id');
+    }
 }

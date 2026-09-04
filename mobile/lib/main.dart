@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_shell.dart';
 import 'bookmark.dart';
+import 'guest_mode.dart';
 import 'login.dart';
 import 'recovery.dart';
 import 'search.dart';
@@ -105,6 +106,21 @@ class WelcomeScreen extends StatelessWidget {
               OutlinedButton(
                 onPressed: () => Navigator.pushNamed(context, '/signup'),
                 child: const Text('Create account'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () async {
+                  await GuestMode.startReview();
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/app',
+                      (_) => false,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.visibility_outlined),
+                label: const Text('Review as guest'),
               ),
               const SizedBox(height: 8),
               TextButton(

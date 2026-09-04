@@ -108,7 +108,7 @@ flutter run -d chrome --no-web-resources-cdn
 By default the Flutter API client points to:
 
 ```text
-http://127.0.0.1:8000/api/v1
+http://10.0.2.2:8000/api/v1
 ```
 
 Override it at build/run time with:
@@ -126,9 +126,11 @@ flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain.e
 ```
 
 Public GET responses are cached on-device for later offline use. The app also
-ships with a small set of text-based grounding and safety resources so a new
-user can select **Continue with offline essentials** before ever connecting.
-Authentication, booking, support tickets, sync, and streamed audio/video still
+ships with a reviewer-friendly guest mode for people who cannot access a live
+backend. Select **Review as guest** from the welcome or sign-in screen to clear
+saved API tokens, skip live API calls, and use built-in sample resources,
+therapist profiles, recommendations, and guided text sessions. Live account
+syncing, appointment creation, support tickets, and streamed audio/video still
 require connectivity.
 
 ## USSD prototype
