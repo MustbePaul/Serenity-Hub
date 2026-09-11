@@ -11,6 +11,7 @@ import 'models/recommendation.dart';
 import 'models/wellness_session.dart';
 import 'models/appointment.dart';
 import 'models/appointment_slot.dart';
+import 'models/support_contact.dart';
 import 'guest_mode.dart';
 
 class ApiClient {
@@ -182,6 +183,45 @@ class ApiClient {
   Future<List<Appointment>> fetchAppointments() async {
     final response = await get('/appointments');
     return _list(response).map(Appointment.fromJson).toList();
+  }
+
+  Future<Appointment> cancelAppointment(
+    int appointmentId, {
+    String? reason,
+  }) async {
+    final response = await patch('/appointments/$appointmentId/cancel', {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+    return Appointment.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<Appointment> rescheduleAppointment({
+    required int appointmentId,
+    required int availabilitySlotId,
+  }) async {
+    final response = await patch('/appointments/$appointmentId/reschedule', {
+      'availability_slot_id': availabilitySlotId,
+    });
+    return Appointment.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<List<SupportContact>> fetchSupportContacts({
+    String? countryCode,
+    bool? emergency,
+    bool? crisis,
+  }) async {
+    final params = <String, String>{
+      if (countryCode != null && countryCode.trim().isNotEmpty)
+        'country_code': countryCode.trim().toUpperCase(),
+      if (emergency != null) 'is_emergency_service': emergency ? '1' : '0',
+      if (crisis != null) 'is_crisis_support': crisis ? '1' : '0',
+    };
+    final response = await get(_withQuery('/support-contacts', params));
+    return _list(response).map(SupportContact.fromJson).toList();
   }
 
   Future<void> submitMood({

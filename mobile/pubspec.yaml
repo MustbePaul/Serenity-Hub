@@ -45,6 +45,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   video_player: ^2.11.1
   just_audio: ^0.10.6
+  timezone: ^0.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

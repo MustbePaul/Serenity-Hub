@@ -108,6 +108,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
           const SizedBox(height: 16),
           const DisclaimerBox(),
+          const SizedBox(height: 8),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: CrisisSupportButton(),
+          ),
           const SizedBox(height: 16),
           if (_loading)
             const Center(child: CircularProgressIndicator())

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'api_client.dart';
+import 'crisis_support.dart';
 import 'guest_mode.dart';
 import 'models/appointment_slot.dart';
 import 'sample_data.dart';
+import 'services/appointment_reminder_service.dart';
 import 'serenity_theme.dart';
 
 class ConsultationPage extends StatefulWidget {
@@ -106,11 +108,12 @@ class _ConsultationPageState extends State<ConsultationPage> {
             ),
             Card(
               color: serenityWarm,
-              child: const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'If you are in immediate danger or need urgent care, contact local emergency services or a trusted crisis support line.',
-                ),
+              child: ListTile(
+                leading: const Icon(Icons.emergency_outlined),
+                title: const Text('Immediate danger or urgent care'),
+                subtitle: const Text(crisisSafetyNotice),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () => showCrisisSupportSheet(context),
               ),
             ),
           ],
@@ -137,6 +140,7 @@ class _BookingSheet extends StatefulWidget {
 
 class _BookingSheetState extends State<_BookingSheet> {
   final _reasonController = TextEditingController();
+  final _reminders = AppointmentReminderService();
   late final List<String> _modes;
   late String _mode;
   late DateTime _selectedDate = _dates.first;
@@ -241,16 +245,34 @@ class _BookingSheetState extends State<_BookingSheet> {
 
     setState(() => _booking = true);
     try {
-      await widget.api.bookAppointment(
+      final appointment = await widget.api.bookAppointment(
         therapistId: therapistId(widget.therapist),
         availabilitySlotId: slot.id,
         mode: _mode,
         reason: _reasonController.text,
       );
+      await _reminders.scheduleFor(appointment);
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment booked successfully.')),
+      await showDialog<void>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Appointment confirmed'),
+              content: Text(
+                '${appointment.therapistName}\n'
+                '${DateFormat('EEE d MMM yyyy, HH:mm').format(appointment.scheduledStart)}\n'
+                '${appointment.mode.replaceAll('_', ' ')} session\n\n'
+                '${appointment.preparationGuidance}\n\n'
+                'A neutral local reminder will be scheduled only if notification permissions are enabled.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Done'),
+                ),
+              ],
+            ),
       );
     } on ApiException catch (error) {
       if (error.statusCode == 409) {

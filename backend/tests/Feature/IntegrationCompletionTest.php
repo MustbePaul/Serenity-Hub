@@ -142,6 +142,110 @@ class IntegrationCompletionTest extends TestCase
             ->assertJsonPath('data.0.mode', 'phone');
     }
 
+    public function test_user_can_cancel_their_own_upcoming_appointment(): void
+    {
+        [$user, $therapist, $slot] = $this->bookingFixture();
+        $appointment = Appointment::create([
+            'user_id' => $user->id,
+            'therapist_id' => $therapist->id,
+            'availability_slot_id' => $slot->id,
+            'scheduled_start' => $slot->starts_at,
+            'scheduled_end' => $slot->ends_at,
+            'mode' => 'phone',
+            'status' => 'confirmed',
+        ]);
+        $slot->update(['status' => 'booked']);
+
+        $this->withHeader('Authorization', 'Bearer '.$user->api_token)
+            ->patchJson("/api/v1/appointments/{$appointment->id}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('availability_slots', [
+            'id' => $slot->id,
+            'status' => 'available',
+        ]);
+    }
+
+    public function test_users_cannot_cancel_other_users_appointments(): void
+    {
+        [$user, $therapist, $slot] = $this->bookingFixture();
+        $otherUser = User::factory()->create(['api_token' => Str::random(40), 'status' => 'active']);
+        $appointment = Appointment::create([
+            'user_id' => $otherUser->id,
+            'therapist_id' => $therapist->id,
+            'availability_slot_id' => $slot->id,
+            'scheduled_start' => $slot->starts_at,
+            'scheduled_end' => $slot->ends_at,
+            'mode' => 'phone',
+            'status' => 'confirmed',
+        ]);
+
+        $this->withHeader('Authorization', 'Bearer '.$user->api_token)
+            ->patchJson("/api/v1/appointments/{$appointment->id}/cancel")
+            ->assertNotFound();
+    }
+
+    public function test_user_can_reschedule_to_available_slot_and_old_slot_is_released(): void
+    {
+        [$user, $therapist, $slot] = $this->bookingFixture();
+        $newSlot = AvailabilitySlot::create([
+            'therapist_id' => $therapist->id,
+            'starts_at' => now()->addDays(4),
+            'ends_at' => now()->addDays(4)->addHour(),
+            'status' => 'available',
+            'timezone' => 'Africa/Blantyre',
+        ]);
+        $appointment = Appointment::create([
+            'user_id' => $user->id,
+            'therapist_id' => $therapist->id,
+            'availability_slot_id' => $slot->id,
+            'scheduled_start' => $slot->starts_at,
+            'scheduled_end' => $slot->ends_at,
+            'mode' => 'phone',
+            'status' => 'confirmed',
+        ]);
+        $slot->update(['status' => 'booked']);
+
+        $this->withHeader('Authorization', 'Bearer '.$user->api_token)
+            ->patchJson("/api/v1/appointments/{$appointment->id}/reschedule", [
+                'availability_slot_id' => $newSlot->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'rescheduled')
+            ->assertJsonPath('data.availability_slot_id', $newSlot->id);
+
+        $this->assertDatabaseHas('availability_slots', ['id' => $slot->id, 'status' => 'available']);
+        $this->assertDatabaseHas('availability_slots', ['id' => $newSlot->id, 'status' => 'booked']);
+    }
+
+    public function test_reschedule_rejects_unavailable_slots(): void
+    {
+        [$user, $therapist, $slot] = $this->bookingFixture();
+        $newSlot = AvailabilitySlot::create([
+            'therapist_id' => $therapist->id,
+            'starts_at' => now()->addDays(4),
+            'ends_at' => now()->addDays(4)->addHour(),
+            'status' => 'booked',
+            'timezone' => 'Africa/Blantyre',
+        ]);
+        $appointment = Appointment::create([
+            'user_id' => $user->id,
+            'therapist_id' => $therapist->id,
+            'availability_slot_id' => $slot->id,
+            'scheduled_start' => $slot->starts_at,
+            'scheduled_end' => $slot->ends_at,
+            'mode' => 'phone',
+            'status' => 'confirmed',
+        ]);
+
+        $this->withHeader('Authorization', 'Bearer '.$user->api_token)
+            ->patchJson("/api/v1/appointments/{$appointment->id}/reschedule", [
+                'availability_slot_id' => $newSlot->id,
+            ])
+            ->assertConflict();
+    }
+
     public function test_mood_checkins_validate_and_belong_to_authenticated_user(): void
     {
         $user = User::factory()->create(['api_token' => Str::random(40), 'status' => 'active']);

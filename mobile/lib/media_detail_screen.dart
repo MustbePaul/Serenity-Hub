@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'crisis_support.dart';
 import 'models/media_asset.dart';
 
 const safetyDisclaimer =
-    'Serenity Hub provides wellness education and emotional support tools. It does not replace emergency services, diagnosis, therapy, or medical treatment. If you are in immediate danger, contact local emergency services or a trusted person now.';
+    'Serenity Hub provides wellness education and emotional support tools. It does not replace emergency services, diagnosis, therapy, or medical treatment.';
 
 class MediaDetailScreen extends StatelessWidget {
   const MediaDetailScreen({super.key, required this.media});
@@ -42,6 +43,11 @@ class MediaDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _Disclaimer(),
+          const SizedBox(height: 8),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: CrisisSupportButton(),
+          ),
           if (media.transcript?.isNotEmpty == true) ...[
             const SizedBox(height: 16),
             Text(
@@ -86,6 +92,19 @@ class _Disclaimer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class CrisisSupportButton extends StatelessWidget {
+  const CrisisSupportButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: () => showCrisisSupportSheet(context),
+      icon: const Icon(Icons.emergency_outlined),
+      label: const Text('Crisis support'),
     );
   }
 }

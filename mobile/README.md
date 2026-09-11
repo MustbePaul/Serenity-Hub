@@ -1,47 +1,6 @@
 # Serenity Hub Mobile
 
-Flutter client for Serenity Hub, a mental wellness app for daily grounding, self-care resources, audio/video serenity sessions, media playback, progress tracking, therapist consultations, appointment scheduling, bookmarks, profiles, settings, and support.
-
-## Structure
-
-```text
-mobile/
-  android/                  Android runner
-  assets/fonts/             Bundled Roboto font
-  ios/                      iOS runner
-  lib/
-    api_client.dart         Laravel API client and token persistence
-    app_shell.dart          Bottom navigation shell
-    main.dart               App entry point, routes, welcome screen
-    serenity_theme.dart     App theme
-    sample_data.dart        Local sample content
-    widgets/                Reusable UI widgets
-    models/                 Dart models
-    providers/              Provider state classes
-    *.dart                  Feature screens
-  linux/                    Linux desktop runner
-  macos/                    macOS desktop runner
-  test/                     Flutter tests
-  web/                      Web runner and PWA assets
-  windows/                  Windows desktop runner
-```
-
-## App Areas
-
-- Welcome, sign in, sign up, and account recovery
-- Home dashboard
-- Library for articles, audio resources, and video resources
-- Guided serenity sessions with category filters
-- Audio playback through `just_audio`
-- Video playback through `video_player`
-- Continue-progress and mood-based recommendation cards
-- Resource search and browsing
-- Therapist consultation flow
-- Schedule and reminders
-- Saved bookmarks
-- Profile and edit profile
-- Settings
-- Help and support
+Flutter client for Serenity Hub, a mental wellness app for daily grounding, self-care resources, audio/video serenity sessions, breathing exercises, media playback, progress tracking, therapist consultations, appointment scheduling and management, support contacts, bookmarks, profiles, settings, and help requests.
 
 ## Requirements
 
@@ -71,13 +30,50 @@ flutter run -d chrome --no-web-resources-cdn
 
 The app bundles `assets/fonts/Roboto-Regular.ttf`, so the web target can start without fetching Roboto from `fonts.gstatic.com`.
 
-Seeded media streams from public HTTPS URLs. For Android emulator testing, make sure your backend API URL uses `10.0.2.2`, but media files still load directly from the internet.
+## Structure
 
-## Guest Review Mode
+```text
+mobile/
+  android/                  Android runner
+  assets/fonts/             Bundled Roboto font
+  ios/                      iOS runner
+  lib/
+    api_client.dart         Laravel API client, cache, token persistence
+    app_shell.dart          Bottom navigation shell
+    main.dart               App entry point, routes, welcome screen
+    serenity_theme.dart     App theme
+    sample_data.dart        Guest-mode sample content
+    models/                 Dart API/domain models
+    providers/              Provider state classes
+    widgets/                Reusable UI widgets
+    *.dart                  Feature screens
+  linux/                    Linux desktop runner
+  macos/                    macOS desktop runner
+  test/                     Flutter tests
+  web/                      Web runner and PWA assets
+  windows/                  Windows desktop runner
+```
 
-Use **Review as guest** from the welcome or sign-in screen when a reviewer does not have access to the Laravel backend. Guest review mode clears any saved API token, skips live API calls, and uses built-in sample resources, therapist profiles, recommendations, and guided text sessions.
+## App Areas
 
-This mode is intended for product and therapy-workflow review. It disables live account syncing and appointment creation, while still allowing the reviewer to browse the app, inspect safety wording, preview therapist booking steps, and open self-care content without network or backend setup.
+- Welcome, sign in, sign up, and account recovery
+- Guest review mode
+- Home dashboard
+- Library for articles, audio resources, and video resources
+- Guided serenity sessions with category and mood filters
+- Breathing exercise screen with silent mode
+- Audio playback through `just_audio`
+- Video playback through `video_player`
+- Continue-progress and mood-based recommendation cards
+- Resource search and browsing
+- Therapist consultation flow
+- Appointment booking, history, cancellation, and rescheduling
+- Schedule and local reminders
+- Crisis and support-contact browsing
+- Saved bookmarks
+- Profile and edit profile
+- Settings
+- Help and support tickets
 
 ## Backend API
 
@@ -93,25 +89,35 @@ Override the API base URL with a Dart define:
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
-For Android emulators, you may need to point at the host machine instead:
+For Android emulators, use the host-machine alias:
 
 ```bash
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 ```
 
-Reviewer, staging, and production APKs should provide the public HTTPS API URL
-at build time:
+Reviewer, staging, and production APKs should provide a public HTTPS API URL at build time:
 
 ```bash
 flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain.example/api/v1
 ```
 
+Do not use `127.0.0.1` in a reviewer build.
+
+## Offline and Guest Behavior
+
+Public GET responses are cached in shared preferences and reused when the device cannot reach the API. Seeded media streams from public HTTPS URLs, so cached metadata does not make streamed audio/video available offline.
+
+Use **Review as guest** from the welcome or sign-in screen when a reviewer does not have access to the Laravel backend. Guest review mode clears any saved API token, skips live API calls, and uses built-in sample resources, therapist profiles, recommendations, and guided text sessions.
+
+Guest mode is intended for product and therapy-workflow review. It disables live account syncing, appointment creation, support ticket submission, and streamed backend media while still allowing reviewers to browse the app, inspect safety wording, preview therapist booking steps, and open self-care content without backend setup.
+
 ## Main Dependencies
 
 - `provider` for state management
 - `http` for API calls
-- `shared_preferences` for token storage
+- `shared_preferences` for token storage and response caching
 - `flutter_local_notifications` for local reminders
+- `timezone` for reminder scheduling support
 - `url_launcher` for opening external links
 - `image_picker` for profile/media selection
 - `just_audio` for audio session playback
@@ -122,9 +128,13 @@ flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain.e
 
 The Library tab combines Laravel `/media` results with existing `/resources` articles. The Sessions tab uses `/wellness-sessions`. Audio and video screens save playback progress to `/media/{media}/progress` about every 20 seconds and when leaving the screen. Home uses `/me/recommendations` and `/me/media-progress` when the user is signed in.
 
+Wellness sessions can include a main media asset, background audio, narration audio, a demonstration video, and breathing pattern fields such as inhale, hold, and exhale seconds.
+
 ## Tests
 
 ```bash
 flutter analyze
 flutter test
 ```
+
+Current tests cover model parsing for appointments, slots, mood scale, support contacts, and the breathing exercise screen.

@@ -10,7 +10,7 @@ class WellnessSessionController extends ApiController
     public function index(Request $request)
     {
         $sessions = WellnessSession::query()
-            ->with(['mediaAsset', 'resource.category'])
+            ->with(['mediaAsset', 'backgroundAudio', 'narrationMedia', 'demonstrationVideo', 'resource.category'])
             ->where('status', 'published')
             ->when($request->query('category'), fn ($query, $category) => $query->where('category', $category))
             ->when($request->query('mood'), fn ($query, $mood) => $query->where('target_mood', $mood))
@@ -30,6 +30,6 @@ class WellnessSessionController extends ApiController
     {
         abort_unless($session->status === 'published', 404);
 
-        return $this->success($session->load(['mediaAsset', 'resource.category']));
+        return $this->success($session->load(['mediaAsset', 'backgroundAudio', 'narrationMedia', 'demonstrationVideo', 'resource.category']));
     }
 }

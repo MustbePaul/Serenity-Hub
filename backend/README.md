@@ -2,7 +2,41 @@
 
 Laravel API service for Serenity Hub.
 
-The backend provides first-party API endpoints for authentication, profile-backed users, wellness content, multimedia self-care media, guided serenity sessions, playback progress, recommendations, therapist discovery, appointment booking, bookmarks, mood tracking, and support requests.
+The backend provides first-party endpoints for authentication, profile-backed users, daily app content, resources, support contacts, multimedia self-care media, guided wellness sessions, breathing exercises, playback progress, recommendations, therapist discovery, appointment booking and management, bookmarks, mood tracking, support requests, and a USSD prototype callback.
+
+## Requirements
+
+- PHP 8.3+
+- Composer
+- Node.js and npm
+- SQLite for the default local environment
+
+## Setup
+
+```bash
+composer install
+npm install
+php -r "file_exists('.env') || copy('.env.example', '.env');"
+php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+php artisan key:generate
+php artisan migrate --seed
+```
+
+## Run
+
+Start only the API server:
+
+```bash
+php artisan serve
+```
+
+Start the Laravel development stack:
+
+```bash
+composer run dev
+```
+
+The dev script runs the API server, queue listener, Laravel Pail logs, and Vite together.
 
 ## Structure
 
@@ -26,50 +60,6 @@ backend/
   tests/                       PHPUnit tests
 ```
 
-## Requirements
-
-- PHP 8.3+
-- Composer
-- Node.js and npm
-- SQLite for the default local environment
-
-## Setup
-
-```bash
-composer install
-npm install
-php -r "file_exists('.env') || copy('.env.example', '.env');"
-php artisan key:generate
-```
-
-Create the SQLite database file if needed:
-
-```bash
-php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
-```
-
-Then run migrations and seed local data:
-
-```bash
-php artisan migrate --seed
-```
-
-## Run
-
-Start only the API server:
-
-```bash
-php artisan serve
-```
-
-Start the Laravel development stack:
-
-```bash
-composer run dev
-```
-
-The dev script runs the API server, queue listener, Laravel Pail logs, and Vite together.
-
 ## API
 
 Health check:
@@ -77,6 +67,14 @@ Health check:
 ```text
 GET /api/health
 ```
+
+USSD prototype callback:
+
+```text
+POST /api/ussd
+```
+
+The USSD endpoint accepts common aggregator fields such as `sessionId`, `serviceCode`, `phoneNumber`, and `text`, then returns `CON` or `END` plain text. It is a technical prototype, not a production shortcode integration.
 
 Public v1 endpoints:
 
@@ -90,11 +88,21 @@ GET  /api/v1/media
 GET  /api/v1/media/{media}
 GET  /api/v1/wellness-sessions
 GET  /api/v1/wellness-sessions/{session}
+GET  /api/v1/support-contacts
+GET  /api/v1/support-contacts/{supportContact}
 GET  /api/v1/therapists
 GET  /api/v1/therapists/{therapist}/availability
 ```
 
-Media listing supports `type`, `query`, `category`, and published status filtering. Wellness session listing supports `category`, `mood`, and `featured`.
+Useful public filters:
+
+```text
+/api/v1/resources?q=stress&category=anxiety
+/api/v1/media?type=audio&query=breathing&category=stress
+/api/v1/wellness-sessions?category=breathing&mood=anxious&featured=1
+/api/v1/support-contacts?country_code=ZZ&is_crisis_support=1
+/api/v1/therapists/{therapist}/availability?date=2026-09-11
+```
 
 Authenticated v1 endpoints require:
 
@@ -106,20 +114,25 @@ Authorization: Bearer <token>
 GET    /api/v1/auth/me
 POST   /api/v1/auth/logout
 GET    /api/v1/home
+PATCH  /api/v1/profile
+GET    /api/v1/appointments
+GET    /api/v1/appointments/{appointment}
+POST   /api/v1/appointments
+PATCH  /api/v1/appointments/{appointment}/reschedule
+PATCH  /api/v1/appointments/{appointment}/cancel
 GET    /api/v1/bookmarks
 POST   /api/v1/resources/{resource}/bookmark
 DELETE /api/v1/resources/{resource}/bookmark
 POST   /api/v1/media/{media}/progress
 GET    /api/v1/me/media-progress
 GET    /api/v1/me/recommendations
-POST   /api/v1/appointments
 POST   /api/v1/mood-checkins
 POST   /api/v1/support-tickets
 ```
 
 ## Domain Tables
 
-The Serenity domain migration creates:
+The Serenity domain migrations create:
 
 ```text
 user_profiles
@@ -141,6 +154,7 @@ quotes_affirmations
 mood_checkins
 notifications
 support_tickets
+support_contacts
 audit_logs
 ```
 
@@ -151,8 +165,9 @@ audit_logs
 - Admin and user test accounts
 - Resource categories and published resources
 - Real playable audio/video demo media
-- Wellness sessions linked to media and resources
+- Guided and breathing wellness sessions linked to media and resources
 - Quotes and affirmations
+- Demo support contacts under country code `ZZ`
 - Therapist specialties
 - Approved therapists with availability slots
 
@@ -173,6 +188,8 @@ php artisan db:seed
 
 The seeder removes old `https://example.com/serenity/...` media rows and writes real public demo URLs.
 
+Demo support contacts are placeholders only. Replace them with verified emergency and crisis-support services before production release.
+
 ## Testing and Builds
 
 ```bash
@@ -180,3 +197,5 @@ composer test
 npm run dev
 npm run build
 ```
+
+Feature tests cover token authentication, appointments, appointment history, rescheduling, cancellation, bookmarks, profile updates, mood check-ins, support tickets, support contacts, USSD responses, multimedia endpoints, and integration behavior.

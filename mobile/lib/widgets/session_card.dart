@@ -14,7 +14,9 @@ class SessionCard extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: Icon(
-          session.mediaAsset.isVideo
+          session.hasBreathingPattern
+              ? Icons.air
+              : session.mediaAsset.isVideo
               ? Icons.ondemand_video_outlined
               : Icons.self_improvement_outlined,
         ),
@@ -24,7 +26,7 @@ class SessionCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '${_label(session.category)} - ${_duration(session.estimatedDurationSeconds ?? session.mediaAsset.durationSeconds)}',
+          '${_label(session.category)} - ${_duration(session.estimatedDurationSeconds ?? session.mediaAsset.durationSeconds)}\n${_modes(session)}',
           maxLines: 2,
         ),
         trailing:
@@ -33,6 +35,18 @@ class SessionCard extends StatelessWidget {
                 : const Icon(Icons.arrow_forward),
       ),
     );
+  }
+
+  String _modes(WellnessSession session) {
+    final modes = <String>['Read'];
+    if (session.mediaAsset.isAudio || session.narrationMedia != null) {
+      modes.add('Listen');
+    }
+    if (session.mediaAsset.isVideo || session.demonstrationVideo != null) {
+      modes.add('Watch');
+    }
+    if (session.hasBreathingPattern) modes.add('Visual guide');
+    return modes.join(', ');
   }
 
   String _label(String value) => value

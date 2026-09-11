@@ -18,9 +18,30 @@ class AppContentController extends ApiController
 {
     public function home(Request $request)
     {
+        $latestMood = MoodCheckin::query()
+            ->where('user_id', $request->user()?->id)
+            ->latest('checked_in_at')
+            ->first();
+        $theme = $this->themeForMood($latestMood?->mood_score);
+
         return $this->success([
-            'quote' => QuoteAffirmation::query()->where('active', true)->latest('display_date')->first(),
-            'affirmation' => QuoteAffirmation::query()->where('active', true)->where('type', 'affirmation')->inRandomOrder()->first(),
+            'quote' => QuoteAffirmation::query()
+                ->where('active', true)
+                ->where('type', 'quote')
+                ->where(fn ($query) => $query->whereNull('display_date')->orWhere('display_date', '<=', today()))
+                ->orderByRaw('display_date IS NULL')
+                ->latest('display_date')
+                ->first(),
+            'affirmation' => QuoteAffirmation::query()
+                ->where('active', true)
+                ->where('type', 'affirmation')
+                ->when($theme, fn ($query) => $query->where(fn ($inner) => $inner->where('theme', $theme)->orWhereNull('theme')))
+                ->inRandomOrder()
+                ->first(),
+            'latest_mood' => $latestMood ? [
+                'score' => $latestMood->mood_score,
+                'label' => $this->labelForMood($latestMood->mood_score),
+            ] : null,
             'recommended_resource' => Resource::query()->where('status', 'published')->with('category')->inRandomOrder()->first(),
             'upcoming_appointment' => Appointment::query()
                 ->where('user_id', $request->user()?->id)
@@ -28,6 +49,28 @@ class AppContentController extends ApiController
                 ->orderBy('scheduled_start')
                 ->first(),
         ]);
+    }
+
+    private function themeForMood(?int $score): ?string
+    {
+        return match ($score) {
+            1, 2 => 'calm',
+            3 => 'grounding',
+            4, 5 => 'gratitude',
+            default => null,
+        };
+    }
+
+    private function labelForMood(int $score): string
+    {
+        return match ($score) {
+            1 => 'Very Low',
+            2 => 'Low',
+            3 => 'Neutral',
+            4 => 'Good',
+            5 => 'Very Good',
+            default => 'Unknown',
+        };
     }
 
     public function categories()

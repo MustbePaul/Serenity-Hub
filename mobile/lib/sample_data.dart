@@ -1,6 +1,14 @@
 const sampleQuote = {
   'text': 'You do not have to solve the whole day at once.',
   'author': 'Serenity Hub',
+  'type': 'quote',
+};
+
+const sampleAffirmation = {
+  'text': 'I can take one steady breath and begin again.',
+  'author': null,
+  'theme': 'calm',
+  'type': 'affirmation',
 };
 
 const sampleResources = [

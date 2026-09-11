@@ -56,6 +56,9 @@ const offlineSessions = <WellnessSession>[
     id: -9101,
     title: 'Grounding after a stressful moment',
     category: 'stress',
+    sessionType: 'guided',
+    instructions:
+        'Read the guidance slowly. Use audio only if available, and stop if it feels uncomfortable.',
     description:
         'A brief stabilizing practice with clear limits and no clinical claims.',
     targetMood: 'overwhelmed',
@@ -77,6 +80,9 @@ const offlineSessions = <WellnessSession>[
     id: -9102,
     title: 'Sleep wind-down reflection',
     category: 'sleep',
+    sessionType: 'guided',
+    instructions:
+        'Move through the reflection silently or with calming audio when available.',
     description:
         'A low-stimulation evening check-in for users who want a softer landing.',
     targetMood: 'tired',
@@ -98,6 +104,9 @@ const offlineSessions = <WellnessSession>[
     id: -9103,
     title: 'Anxiety signal map',
     category: 'anxiety',
+    sessionType: 'guided',
+    instructions:
+        'Separate body signals, thoughts, and urges without treating the result as a diagnosis.',
     description:
         'A psychoeducation exercise that separates sensations, thoughts, and actions.',
     targetMood: 'anxious',
@@ -118,6 +127,9 @@ const offlineSessions = <WellnessSession>[
     id: -9104,
     title: 'Compassionate self-talk practice',
     category: 'reflection',
+    sessionType: 'guided',
+    instructions:
+        'Write or think through the prompt. You can complete this silently.',
     description:
         'A short practice for replacing harsh internal language with grounded support.',
     targetMood: 'discouraged',
@@ -132,6 +144,33 @@ const offlineSessions = <WellnessSession>[
       durationSeconds: 360,
       transcript:
           'Write the harsh sentence exactly as it appears. Now rewrite it as if you were speaking to someone you respect. Keep it honest and specific: this is hard, and one next step is enough.',
+    ),
+  ),
+  WellnessSession(
+    id: -9105,
+    title: 'Four-four breathing',
+    category: 'breathing',
+    sessionType: 'breathing',
+    description: 'A silent breathing cycle with optional motion.',
+    instructions:
+        'Inhale for four counts, hold for four, and exhale for four. Return to normal breathing if needed.',
+    breathingPattern: '4-4 breathing',
+    inhaleSeconds: 4,
+    holdSeconds: 4,
+    exhaleSeconds: 4,
+    targetMood: 'anxious',
+    difficulty: 'beginner',
+    estimatedDurationSeconds: 180,
+    isFeatured: true,
+    mediaAsset: MediaAsset(
+      id: -9205,
+      title: 'Four-four breathing',
+      mediaType: 'article',
+      fileUrl: '',
+      description: 'A silent breathing exercise.',
+      durationSeconds: 180,
+      transcript:
+          'Inhale gently for four. Hold for four if comfortable. Exhale for four. Repeat at your own pace.',
     ),
   ),
 ];

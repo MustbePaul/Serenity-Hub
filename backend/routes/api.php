@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AppContentController;
+use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\MediaProgressController;
 use App\Http\Controllers\Api\V1\RecommendationController;
+use App\Http\Controllers\Api\V1\SupportContactController;
 use App\Http\Controllers\Api\V1\WellnessSessionController;
 use App\Http\Controllers\UssdController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/media/{media}', [MediaController::class, 'show']);
     Route::get('/wellness-sessions', [WellnessSessionController::class, 'index']);
     Route::get('/wellness-sessions/{session}', [WellnessSessionController::class, 'show']);
+    Route::get('/support-contacts', [SupportContactController::class, 'index']);
+    Route::get('/support-contacts/{supportContact}', [SupportContactController::class, 'show']);
     Route::get('/therapists', [AppContentController::class, 'therapists']);
     Route::get('/therapists/{therapist}/availability', [AppContentController::class, 'availability']);
 
@@ -39,6 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/home', [AppContentController::class, 'home']);
         Route::get('/appointments', [AppContentController::class, 'appointments']);
+        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::patch('/profile', [AppContentController::class, 'updateProfile']);
         Route::get('/bookmarks', [AppContentController::class, 'bookmarks']);
         Route::post('/resources/{resource}/bookmark', [AppContentController::class, 'bookmark']);
@@ -47,6 +52,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/me/media-progress', [MediaProgressController::class, 'index']);
         Route::get('/me/recommendations', [RecommendationController::class, 'index']);
         Route::post('/appointments', [AppContentController::class, 'book']);
+        Route::patch('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule']);
+        Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
         Route::post('/mood-checkins', [AppContentController::class, 'mood']);
         Route::post('/support-tickets', [AppContentController::class, 'support']);
     });

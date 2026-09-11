@@ -56,7 +56,8 @@ class MultimediaFeatureTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.media_asset.title', 'Breathing Audio');
+            ->assertJsonPath('data.0.media_asset.title', 'Breathing Audio')
+            ->assertJsonPath('data.0.supports_offline', false);
     }
 
     public function test_authenticated_user_can_save_media_progress(): void

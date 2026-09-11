@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
 import 'audio_player_screen.dart';
+import 'crisis_support.dart';
 import 'guest_mode.dart';
 import 'media_detail_screen.dart';
 import 'models/media_asset.dart';
+import 'models/mood_scale.dart';
 import 'providers/recommendation_provider.dart';
 import 'sample_data.dart';
 import 'serenity_theme.dart';
@@ -26,6 +28,8 @@ class _HomePageState extends State<HomePage> {
   final _api = ApiClient();
   final _recommendations = RecommendationProvider();
   Map<String, dynamic> _quote = Map<String, dynamic>.from(sampleQuote);
+  Map<String, dynamic>? _affirmation;
+  Map<String, dynamic>? _latestMood;
   Map<String, dynamic>? _resource = Map<String, dynamic>.from(
     sampleResources.first,
   );
@@ -53,6 +57,14 @@ class _HomePageState extends State<HomePage> {
       final data = response['data'] as Map<String, dynamic>;
       setState(() {
         _quote = Map<String, dynamic>.from(data['quote'] ?? sampleQuote);
+        _affirmation =
+            data['affirmation'] == null
+                ? null
+                : Map<String, dynamic>.from(data['affirmation']);
+        _latestMood =
+            data['latest_mood'] == null
+                ? null
+                : Map<String, dynamic>.from(data['latest_mood']);
         _guestMode = guestMode;
         _resource =
             data['recommended_resource'] == null
@@ -63,6 +75,8 @@ class _HomePageState extends State<HomePage> {
       await _recommendations.load();
       setState(() {
         _quote = Map<String, dynamic>.from(sampleQuote);
+        _affirmation = Map<String, dynamic>.from(sampleAffirmation);
+        _latestMood = null;
         _resource = Map<String, dynamic>.from(sampleResources.first);
         _guestMode = guestMode;
       });
@@ -103,7 +117,11 @@ class _HomePageState extends State<HomePage> {
               const _GuestReviewBanner(),
               const SizedBox(height: 12),
             ],
-            _QuoteCard(quote: _quote),
+            _QuoteCard(
+              quote: _quote,
+              affirmation: _affirmation,
+              latestMood: _latestMood,
+            ),
             const SizedBox(height: 12),
             const _MoodCheckIn(),
             const SizedBox(height: 12),
@@ -165,6 +183,16 @@ class _HomePageState extends State<HomePage> {
                 onTap: () => Navigator.pushNamed(context, '/consultation'),
               ),
             ),
+            Card(
+              color: serenityWarm,
+              child: ListTile(
+                leading: const Icon(Icons.emergency_outlined),
+                title: const Text('Need urgent help now?'),
+                subtitle: const Text(crisisSafetyNotice),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () => showCrisisSupportSheet(context),
+              ),
+            ),
           ],
         ),
       ),
@@ -218,9 +246,15 @@ class _GuestReviewBanner extends StatelessWidget {
 }
 
 class _QuoteCard extends StatelessWidget {
-  const _QuoteCard({required this.quote});
+  const _QuoteCard({
+    required this.quote,
+    required this.affirmation,
+    required this.latestMood,
+  });
 
   final Map<String, dynamic> quote;
+  final Map<String, dynamic>? affirmation;
+  final Map<String, dynamic>? latestMood;
 
   @override
   Widget build(BuildContext context) {
@@ -234,11 +268,49 @@ class _QuoteCard extends StatelessWidget {
             const Icon(Icons.format_quote),
             const SizedBox(height: 8),
             Text(
+              (quote['type']?.toString() ?? 'quote').toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
               quote['text']?.toString() ?? sampleQuote['text']!,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(quote['author']?.toString() ?? 'Serenity Hub'),
+            if (affirmation != null) ...[
+              const Divider(height: 24),
+              Text(
+                latestMood == null
+                    ? 'AFFIRMATION'
+                    : 'AFFIRMATION FOR ${latestMood!['label']?.toString().toUpperCase()}',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                affirmation!['text']?.toString() ?? '',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Suggested for reflection only, not as diagnosis or treatment advice.',
+              ),
+            ],
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Quote saved for this device session.'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: const Text('Save'),
+              ),
+            ),
           ],
         ),
       ),
@@ -278,13 +350,16 @@ class _MoodCheckInState extends State<_MoodCheckIn> {
     }
     final payload = {
       'mood_score': _score,
-      'tags': [_tagForScore(_score)],
+      'tags': [MoodScale.byScore(_score).recommendationTag],
       'created_at': DateTime.now().toIso8601String(),
     };
 
     try {
       await _syncPending();
-      await _api.submitMood(moodScore: _score, tags: [_tagForScore(_score)]);
+      await _api.submitMood(
+        moodScore: _score,
+        tags: [MoodScale.byScore(_score).recommendationTag],
+      );
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -350,15 +425,9 @@ class _MoodCheckInState extends State<_MoodCheckIn> {
     await prefs.setString(_pendingKey, jsonEncode(remaining));
   }
 
-  String _tagForScore(int score) {
-    if (score <= 1) return 'sad';
-    if (score == 2) return 'stressed';
-    if (score == 3) return 'tired';
-    return 'calm';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final selected = MoodScale.byScore(_score);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -371,14 +440,70 @@ class _MoodCheckInState extends State<_MoodCheckIn> {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
-            Slider(
-              value: _score.toDouble(),
-              min: 1,
-              max: 5,
-              divisions: 4,
-              label: '$_score',
-              onChanged: (value) => setState(() => _score = value.round()),
+            const SizedBox(height: 6),
+            const Text(
+              'Choose the number that best matches how today feels. The labels explain the scale from 1 very low to 5 very good.',
             ),
+            const SizedBox(height: 12),
+            ...MoodScale.options.map((option) {
+              final isSelected = option.score == _score;
+              return Semantics(
+                button: true,
+                selected: isSelected,
+                label: option.semanticLabel,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => setState(() => _score = option.score),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color:
+                              isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).dividerColor,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        color:
+                            isSelected
+                                ? serenityMint
+                                : Theme.of(context).cardColor,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(option.icon),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    option.shortLabel,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(option.explanation),
+                                ],
+                              ),
+                            ),
+                            if (isSelected) const Icon(Icons.check_circle),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            Text('Selected: ${selected.shortLabel}'),
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _saving ? null : _save,
               icon:

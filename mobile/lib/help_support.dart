@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api_client.dart';
+import 'crisis_support.dart';
+import 'serenity_theme.dart';
 
 class HelpSupportPage extends StatefulWidget {
   const HelpSupportPage({super.key});
@@ -109,17 +111,19 @@ class _HelpSupportPageState extends State<HelpSupportPage>
 
   Future<void> _launchUrl(String url) async {
     final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Could not launch URL',
-              style: TextStyle(fontFamily: 'Inter'),
-            ),
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This action is not available on this device.',
+            style: TextStyle(fontFamily: 'Inter'),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 
@@ -344,6 +348,17 @@ class _HelpSupportPageState extends State<HelpSupportPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Card(
+            color: serenityWarm,
+            child: ListTile(
+              leading: const Icon(Icons.emergency_outlined),
+              title: const Text('Emergency and crisis support'),
+              subtitle: const Text(crisisSafetyNotice),
+              trailing: const Icon(Icons.arrow_forward),
+              onTap: () => showCrisisSupportSheet(context),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
             elevation: 3,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -535,7 +550,7 @@ class _HelpSupportPageState extends State<HelpSupportPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Other Ways to Reach Us',
+                    'Before sending urgent messages',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -544,36 +559,21 @@ class _HelpSupportPageState extends State<HelpSupportPage>
                   ),
                   const SizedBox(height: 12),
                   _contactMethod(
-                    icon: Icons.phone,
-                    title: 'Call Support',
-                    description: 'Available Mon-Fri, 9 AM - 5 PM EST',
-                    actionText: '+1 (555) 123-4567',
-                    onTap: () => _launchUrl('tel:+15551234567'),
+                    icon: Icons.health_and_safety_outlined,
+                    title: 'Immediate danger',
+                    description:
+                        'Serenity Hub messages are not monitored as emergency services.',
+                    actionText: 'Open crisis directory',
+                    onTap: () => showCrisisSupportSheet(context),
                   ),
                   const Divider(),
                   _contactMethod(
-                    icon: Icons.chat,
-                    title: 'Live Chat',
-                    description: 'Chat with a support agent in real-time',
-                    actionText: 'Start Chat',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Live chat would open here',
-                            style: TextStyle(fontFamily: 'Inter'),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const Divider(),
-                  _contactMethod(
-                    icon: Icons.email,
-                    title: 'Email Support',
-                    description: 'We\'ll respond within 24 hours',
-                    actionText: 'support@example.com',
-                    onTap: () => _launchUrl('mailto:support@example.com'),
+                    icon: Icons.public,
+                    title: 'Verified contacts',
+                    description:
+                        'Use the crisis-support directory for contacts managed by the backend.',
+                    actionText: 'View directory',
+                    onTap: () => showCrisisSupportSheet(context),
                   ),
                 ],
               ),

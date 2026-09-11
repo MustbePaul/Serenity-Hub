@@ -8,6 +8,7 @@ use App\Models\QuoteAffirmation;
 use App\Models\Resource;
 use App\Models\ResourceCategory;
 use App\Models\Specialty;
+use App\Models\SupportContact;
 use App\Models\TherapistProfile;
 use App\Models\User;
 use App\Models\WellnessSession;
@@ -79,8 +80,38 @@ class DatabaseSeeder extends Seeder
         foreach ([
             ['text' => 'You do not have to solve the whole day at once.', 'author' => 'Serenity Hub', 'theme' => 'grounding', 'type' => 'quote'],
             ['text' => 'I can take one steady breath and begin again.', 'author' => null, 'theme' => 'calm', 'type' => 'affirmation'],
+            ['text' => 'A small kind action still counts.', 'author' => null, 'theme' => 'gratitude', 'type' => 'affirmation'],
         ] as $quote) {
             QuoteAffirmation::firstOrCreate(['text' => $quote['text']], [...$quote, 'active' => true, 'display_date' => now()->toDateString(), 'created_by' => $admin->id]);
+        }
+
+        foreach ([
+            [
+                'country_code' => 'ZZ',
+                'country_name' => 'Demo Country',
+                'service_name' => 'DEMO ONLY - Verified local emergency service required',
+                'description' => 'Development placeholder. Replace with a verified emergency-service contact before production release.',
+                'availability_text' => 'Demo data only. Not for real emergencies.',
+                'is_emergency_service' => true,
+                'is_crisis_support' => false,
+                'display_order' => 1,
+            ],
+            [
+                'country_code' => 'ZZ',
+                'country_name' => 'Demo Country',
+                'service_name' => 'DEMO ONLY - Crisis support line required',
+                'description' => 'Development placeholder. Add verified phone, SMS, WhatsApp, website, or email contacts through the backend before release.',
+                'website_url' => 'https://example.com/replace-with-verified-crisis-support',
+                'availability_text' => 'Demo data only. Verify operating hours before production.',
+                'is_emergency_service' => false,
+                'is_crisis_support' => true,
+                'display_order' => 2,
+            ],
+        ] as $contact) {
+            SupportContact::updateOrCreate(
+                ['country_code' => $contact['country_code'], 'service_name' => $contact['service_name']],
+                [...$contact, 'is_active' => true],
+            );
         }
 
         MediaAsset::query()
@@ -175,12 +206,25 @@ class DatabaseSeeder extends Seeder
                 [
                     'description' => $asset?->description,
                     'category' => $sessionSeed['category'],
+                    'session_type' => $sessionSeed['category'] === 'breathing' ? 'breathing' : 'guided',
+                    'instructions' => $sessionSeed['category'] === 'breathing'
+                        ? "Sit comfortably. Inhale for four counts, hold for four counts, and exhale for four counts. Pause or stop if the practice feels uncomfortable."
+                        : "Read the guidance first, then choose audio or video if available. You can complete this silently.",
+                    'transcript' => $asset?->transcript,
+                    'breathing_pattern' => $sessionSeed['category'] === 'breathing' ? '4-4 breathing' : null,
+                    'inhale_seconds' => $sessionSeed['category'] === 'breathing' ? 4 : null,
+                    'hold_seconds' => $sessionSeed['category'] === 'breathing' ? 4 : null,
+                    'exhale_seconds' => $sessionSeed['category'] === 'breathing' ? 4 : null,
                     'target_mood' => $sessionSeed['target_mood'],
                     'difficulty' => 'beginner',
                     'estimated_duration_seconds' => $asset?->duration_seconds,
                     'resource_id' => $asset?->resources()->first()?->id,
                     'media_asset_id' => $asset->id,
+                    'background_audio_media_id' => $asset->media_type === 'audio' ? $asset->id : null,
+                    'narration_media_id' => $asset->media_type === 'audio' ? $asset->id : null,
+                    'demonstration_video_media_id' => $asset->media_type === 'video' ? $asset->id : null,
                     'is_featured' => $sessionSeed['featured'],
+                    'supports_offline' => true,
                     'status' => 'published',
                 ],
             );

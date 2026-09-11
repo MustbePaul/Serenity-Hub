@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'audio_player_screen.dart';
+import 'breathing_exercise_screen.dart';
 import 'media_detail_screen.dart';
 import 'models/wellness_session.dart';
 import 'providers/session_provider.dart';
@@ -131,6 +132,12 @@ class _SessionsScreenState extends State<SessionsScreen> {
   }
 
   void _openSession(WellnessSession session) {
+    if (session.hasBreathingPattern) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => BreathingExerciseScreen(session: session)),
+      );
+      return;
+    }
     final media = session.mediaAsset;
     final page =
         media.isVideo

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'api_client.dart';
 import 'guest_mode.dart';
 import 'models/appointment.dart';
+import 'models/appointment_slot.dart';
+import 'services/appointment_reminder_service.dart';
 import 'serenity_theme.dart';
 
 class AppointmentHistoryPage extends StatefulWidget {
@@ -15,6 +17,7 @@ class AppointmentHistoryPage extends StatefulWidget {
 
 class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
   final _api = ApiClient();
+  final _reminders = AppointmentReminderService();
   List<Appointment> _appointments = [];
   bool _loading = true;
   bool _guestMode = false;
@@ -108,11 +111,23 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
                       _AppointmentSection(
                         title: 'Upcoming',
                         appointments: upcoming,
+                        onChanged: _load,
+                        api: _api,
+                        reminders: _reminders,
                       ),
-                      _AppointmentSection(title: 'Past', appointments: past),
+                      _AppointmentSection(
+                        title: 'Past',
+                        appointments: past,
+                        onChanged: _load,
+                        api: _api,
+                        reminders: _reminders,
+                      ),
                       _AppointmentSection(
                         title: 'Cancelled',
                         appointments: cancelled,
+                        onChanged: _load,
+                        api: _api,
+                        reminders: _reminders,
                       ),
                     ],
                   ],
@@ -123,10 +138,19 @@ class _AppointmentHistoryPageState extends State<AppointmentHistoryPage> {
 }
 
 class _AppointmentSection extends StatelessWidget {
-  const _AppointmentSection({required this.title, required this.appointments});
+  const _AppointmentSection({
+    required this.title,
+    required this.appointments,
+    required this.onChanged,
+    required this.api,
+    required this.reminders,
+  });
 
   final String title;
   final List<Appointment> appointments;
+  final Future<void> Function() onChanged;
+  final ApiClient api;
+  final AppointmentReminderService reminders;
 
   @override
   Widget build(BuildContext context) {
@@ -143,16 +167,31 @@ class _AppointmentSection extends StatelessWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
-        ...appointments.map((appointment) => _AppointmentCard(appointment)),
+        ...appointments.map(
+          (appointment) => _AppointmentCard(
+            appointment: appointment,
+            api: api,
+            reminders: reminders,
+            onChanged: onChanged,
+          ),
+        ),
       ],
     );
   }
 }
 
 class _AppointmentCard extends StatelessWidget {
-  const _AppointmentCard(this.appointment);
+  const _AppointmentCard({
+    required this.appointment,
+    required this.api,
+    required this.reminders,
+    required this.onChanged,
+  });
 
   final Appointment appointment;
+  final ApiClient api;
+  final AppointmentReminderService reminders;
+  final Future<void> Function() onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -162,15 +201,145 @@ class _AppointmentCard extends StatelessWidget {
     final start = DateFormat('HH:mm').format(appointment.scheduledStart);
     final end = DateFormat('HH:mm').format(appointment.scheduledEnd);
     return Card(
-      child: ListTile(
-        leading: const Icon(Icons.event_note_outlined),
-        title: Text(appointment.therapistName),
-        subtitle: Text(
-          '$date, $start - $end\n${appointment.mode.replaceAll('_', ' ')} - ${appointment.status}',
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_note_outlined),
+              title: Text(appointment.therapistName),
+              subtitle: Text(
+                '$date, $start - $end\n'
+                '${appointment.mode.replaceAll('_', ' ')} - ${appointment.statusLabel}\n'
+                '${appointment.preparationGuidance}',
+              ),
+              isThreeLine: true,
+            ),
+            if (appointment.canManage)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _reschedule(context),
+                    icon: const Icon(Icons.edit_calendar_outlined),
+                    label: const Text('Reschedule'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _cancel(context),
+                    icon: const Icon(Icons.event_busy_outlined),
+                    label: const Text('Cancel'),
+                  ),
+                ],
+              ),
+          ],
         ),
-        isThreeLine: true,
       ),
     );
+  }
+
+  Future<void> _cancel(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cancel appointment?'),
+            content: const Text(
+              'This keeps the appointment in your history and releases the time slot if it is still upcoming.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Cancel appointment'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+    try {
+      await api.cancelAppointment(appointment.id);
+      await reminders.cancelFor(appointment.id);
+      await onChanged();
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Appointment cancelled.')));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not cancel this appointment.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _reschedule(BuildContext context) async {
+    final slots = await _loadSlots(context);
+    if (!context.mounted || slots.isEmpty) return;
+    final slot = await showDialog<AppointmentSlot>(
+      context: context,
+      builder:
+          (context) => SimpleDialog(
+            title: const Text('Choose a new time'),
+            children:
+                slots
+                    .map(
+                      (slot) => SimpleDialogOption(
+                        onPressed: () => Navigator.pop(context, slot),
+                        child: Text(
+                          DateFormat('EEE d MMM, HH:mm').format(slot.startsAt),
+                        ),
+                      ),
+                    )
+                    .toList(),
+          ),
+    );
+    if (slot == null) return;
+    try {
+      final updated = await api.rescheduleAppointment(
+        appointmentId: appointment.id,
+        availabilitySlotId: slot.id,
+      );
+      await reminders.cancelFor(appointment.id);
+      await reminders.scheduleFor(updated);
+      await onChanged();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment rescheduled.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not reschedule this appointment.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<List<AppointmentSlot>> _loadSlots(BuildContext context) async {
+    try {
+      return await api.fetchAvailability(
+        therapistId: appointment.therapistId,
+        date: appointment.scheduledStart,
+      );
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No available slots could be loaded.')),
+        );
+      }
+      return [];
+    }
   }
 }
 
