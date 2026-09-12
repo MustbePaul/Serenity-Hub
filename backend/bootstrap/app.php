@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'api.token' => \App\Http\Middleware\ApiTokenAuth::class,
+            'community.moderator' => \App\Http\Middleware\CommunityModerator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

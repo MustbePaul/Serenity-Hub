@@ -47,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserMediaProgress::class);
     }
+
+    public function communityIdentities(): HasMany
+    {
+        return $this->hasMany(CommunityIdentity::class);
+    }
 }

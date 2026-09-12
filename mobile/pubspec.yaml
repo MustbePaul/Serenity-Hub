@@ -46,6 +46,7 @@ dependencies:
   video_player: ^2.11.1
   just_audio: ^0.10.6
   timezone: ^0.10.0
+  web_socket_channel: ^3.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

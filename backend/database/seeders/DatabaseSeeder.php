@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AvailabilitySlot;
+use App\Models\CommunityRoom;
 use App\Models\MediaAsset;
 use App\Models\QuoteAffirmation;
 use App\Models\Resource;
@@ -46,6 +47,23 @@ class DatabaseSeeder extends Seeder
         );
         $user->profile()->firstOrCreate(['user_id' => $user->id], ['privacy_consent_at' => now()]);
         $user->settings()->firstOrCreate(['user_id' => $user->id]);
+
+        $communityRooms = [
+            ['name' => 'World Room', 'slug' => 'world', 'description' => 'General supportive conversation for Serenity Hub members.', 'icon_key' => 'globe', 'sort_order' => 1],
+            ['name' => 'How Are You Feeling?', 'slug' => 'feelings', 'description' => 'A place to check in with what is present today.', 'icon_key' => 'heart-pulse', 'sort_order' => 2],
+            ['name' => 'Stress & Anxiety', 'slug' => 'stress-anxiety', 'description' => 'Gentle peer support for stressful or anxious moments.', 'icon_key' => 'cloud', 'sort_order' => 3],
+            ['name' => 'Relationships', 'slug' => 'relationships', 'description' => 'Supportive conversation about connection and boundaries.', 'icon_key' => 'users', 'sort_order' => 4],
+            ['name' => 'Students & Young Adults', 'slug' => 'students-young-adults', 'description' => 'Space for school, study, transition, and young adult life.', 'icon_key' => 'graduation-cap', 'sort_order' => 5],
+            ['name' => 'Work & Life', 'slug' => 'work-life', 'description' => 'Conversation about work, rest, pressure, and everyday routines.', 'icon_key' => 'briefcase', 'sort_order' => 6],
+            ['name' => 'Wins Today', 'slug' => 'wins-today', 'description' => 'Share small victories, relief, progress, or gratitude.', 'icon_key' => 'sparkles', 'sort_order' => 7],
+        ];
+
+        foreach ($communityRooms as $room) {
+            CommunityRoom::updateOrCreate(
+                ['slug' => $room['slug']],
+                [...$room, 'is_active' => true],
+            );
+        }
 
         $categories = collect([
             ['name' => 'Stress', 'slug' => 'stress', 'description' => 'Grounding and coping strategies for stressful moments.', 'display_order' => 1],

@@ -11,6 +11,10 @@ import 'models/recommendation.dart';
 import 'models/wellness_session.dart';
 import 'models/appointment.dart';
 import 'models/appointment_slot.dart';
+import 'models/community_identity.dart';
+import 'models/community_message.dart';
+import 'models/community_room.dart';
+import 'models/community_safety_result.dart';
 import 'models/support_contact.dart';
 import 'guest_mode.dart';
 
@@ -261,6 +265,114 @@ class ApiClient {
     });
   }
 
+  Future<CommunityIdentity> fetchCommunityIdentity() async {
+    final response = await get('/community/me');
+    return CommunityIdentity.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<List<CommunityRoom>> fetchCommunityRooms() async {
+    final response = await get('/community/rooms');
+    return _list(response).map(CommunityRoom.fromJson).toList();
+  }
+
+  Future<CommunityMessagePage> fetchCommunityMessages({
+    required String roomSlug,
+    int page = 1,
+    int perPage = 30,
+  }) async {
+    final response = await get(
+      _withQuery('/community/rooms/$roomSlug/messages', {
+        'page': page.toString(),
+        'per_page': perPage.toString(),
+      }),
+    );
+    return CommunityMessagePage.fromResponse(response);
+  }
+
+  Future<CommunityPostResult> postCommunityMessage({
+    required String roomSlug,
+    required String body,
+  }) async {
+    final response = await post('/community/rooms/$roomSlug/messages', {
+      'body': body,
+    });
+    return CommunityPostResult.fromResponse(response);
+  }
+
+  Future<CommunityMessagePage> fetchCommunityReplies({
+    required int messageId,
+    int page = 1,
+    int perPage = 30,
+  }) async {
+    final response = await get(
+      _withQuery('/community/messages/$messageId/replies', {
+        'page': page.toString(),
+        'per_page': perPage.toString(),
+      }),
+    );
+    return CommunityMessagePage.fromResponse(response);
+  }
+
+  Future<CommunityPostResult> postCommunityReply({
+    required int messageId,
+    required String body,
+  }) async {
+    final response = await post('/community/messages/$messageId/replies', {
+      'body': body,
+    });
+    return CommunityPostResult.fromResponse(response);
+  }
+
+  Future<CommunityMessage> addCommunityReaction({
+    required int messageId,
+    required String reaction,
+  }) async {
+    final response = await post('/community/messages/$messageId/reactions', {
+      'reaction': reaction,
+    });
+    return CommunityMessage.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<CommunityMessage> removeCommunityReaction({
+    required int messageId,
+    required String reaction,
+  }) async {
+    final response = await delete(
+      '/community/messages/$messageId/reactions/$reaction',
+    );
+    return CommunityMessage.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<void> reportCommunityMessage({
+    required int messageId,
+    required String reason,
+    String? details,
+  }) async {
+    await post('/community/messages/$messageId/report', {
+      'reason': reason,
+      if (details != null && details.trim().isNotEmpty)
+        'details': details.trim(),
+    });
+  }
+
+  Future<void> blockCommunityIdentity(String anonymousCode) async {
+    await post('/community/identities/$anonymousCode/block', {});
+  }
+
+  Future<void> unblockCommunityIdentity(String anonymousCode) async {
+    await delete('/community/identities/$anonymousCode/block');
+  }
+
+  Future<void> deleteCommunityMessage(int messageId) async {
+    await delete('/community/messages/$messageId');
+  }
+
   Future<Map<String, dynamic>> updateProfile({
     required String name,
     String? phone,
@@ -388,6 +500,67 @@ class ApiClient {
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .toList();
+  }
+}
+
+class CommunityMessagePage {
+  const CommunityMessagePage({
+    required this.messages,
+    required this.currentPage,
+    required this.lastPage,
+    required this.total,
+  });
+
+  final List<CommunityMessage> messages;
+  final int currentPage;
+  final int lastPage;
+  final int total;
+
+  bool get hasMore => currentPage < lastPage;
+
+  factory CommunityMessagePage.fromResponse(Map<String, dynamic> response) {
+    int intValue(Object? value) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value?.toString() ?? '') ?? 0;
+    }
+
+    final meta =
+        response['meta'] is Map
+            ? Map<String, dynamic>.from(response['meta'] as Map)
+            : const <String, dynamic>{};
+    final messages =
+        (response['data'] as List? ?? const [])
+            .whereType<Map>()
+            .map((item) => CommunityMessage.fromJson(Map.from(item)))
+            .toList();
+    return CommunityMessagePage(
+      messages: messages,
+      currentPage: intValue(meta['current_page']),
+      lastPage: intValue(meta['last_page']),
+      total: intValue(meta['total']),
+    );
+  }
+}
+
+class CommunityPostResult {
+  const CommunityPostResult({required this.message, required this.safety});
+
+  final CommunityMessage message;
+  final CommunitySafetyResult safety;
+
+  factory CommunityPostResult.fromResponse(Map<String, dynamic> response) {
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    return CommunityPostResult(
+      message: CommunityMessage.fromJson(
+        Map<String, dynamic>.from(data['message'] as Map),
+      ),
+      safety: CommunitySafetyResult.fromJson(
+        data['safety'] is Map
+            ? Map<String, dynamic>.from(data['safety'] as Map)
+            : null,
+      ),
+    );
   }
 }
 

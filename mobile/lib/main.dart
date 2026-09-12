@@ -7,6 +7,7 @@ import 'login.dart';
 import 'recovery.dart';
 import 'search.dart';
 import 'serenity_theme.dart';
+import 'serenity_circle_screen.dart';
 import 'signup.dart';
 import 'ussd_prototype.dart';
 
@@ -39,6 +40,7 @@ class SerenityHubApp extends StatelessWidget {
         '/profile': (context) => const AppShell(initialIndex: 4),
         '/search': (context) => const AppShell(initialIndex: 1),
         '/resource-search': (context) => const SearchPage(),
+        '/circle': (context) => const SerenityCircleScreen(),
         '/ussd-prototype': (context) => const UssdPrototypePage(),
       },
     );

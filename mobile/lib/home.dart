@@ -13,6 +13,7 @@ import 'models/mood_scale.dart';
 import 'providers/recommendation_provider.dart';
 import 'sample_data.dart';
 import 'serenity_theme.dart';
+import 'serenity_circle_screen.dart';
 import 'video_player_screen.dart';
 import 'widgets/media_card.dart';
 import 'widgets/recommendation_card.dart';
@@ -167,6 +168,24 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 12),
+            Card(
+              color: serenityMint,
+              child: ListTile(
+                leading: const Icon(Icons.forum_outlined),
+                title: const Text('Serenity Circle'),
+                subtitle: const Text(
+                  'Share what you\'re carrying. Support someone who may be feeling the same.',
+                ),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SerenityCircleScreen(),
+                      ),
+                    ),
+              ),
             ),
             const SizedBox(height: 12),
             _ResourceCard(resource: _resource),

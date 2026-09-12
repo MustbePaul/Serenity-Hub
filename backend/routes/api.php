@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\V1\AppContentController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CommunityBroadcastAuthController;
+use App\Http\Controllers\Api\V1\CommunityController;
+use App\Http\Controllers\Api\V1\CommunityModerationController;
 use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\MediaProgressController;
 use App\Http\Controllers\Api\V1\RecommendationController;
@@ -56,5 +59,30 @@ Route::prefix('v1')->group(function () {
         Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
         Route::post('/mood-checkins', [AppContentController::class, 'mood']);
         Route::post('/support-tickets', [AppContentController::class, 'support']);
+
+        Route::get('/community/me', [CommunityController::class, 'me']);
+        Route::post('/community/broadcasting/auth', CommunityBroadcastAuthController::class);
+        Route::get('/community/rooms', [CommunityController::class, 'rooms']);
+        Route::get('/community/rooms/{room:slug}/messages', [CommunityController::class, 'messages']);
+        Route::post('/community/rooms/{room:slug}/messages', [CommunityController::class, 'storeMessage'])->middleware('throttle:community-posts');
+        Route::get('/community/messages/{message}/replies', [CommunityController::class, 'replies']);
+        Route::post('/community/messages/{message}/replies', [CommunityController::class, 'storeReply'])->middleware('throttle:community-posts');
+        Route::post('/community/messages/{message}/reactions', [CommunityController::class, 'react'])->middleware('throttle:community-reactions');
+        Route::delete('/community/messages/{message}/reactions/{reaction}', [CommunityController::class, 'removeReaction'])->middleware('throttle:community-reactions');
+        Route::post('/community/messages/{message}/report', [CommunityController::class, 'report'])->middleware('throttle:community-reports');
+        Route::post('/community/identities/{identity}/block', [CommunityController::class, 'block']);
+        Route::delete('/community/identities/{identity}/block', [CommunityController::class, 'unblock']);
+        Route::delete('/community/messages/{message}', [CommunityController::class, 'destroy']);
+
+        Route::prefix('/community/moderation')->middleware('community.moderator')->group(function () {
+            Route::get('/reports', [CommunityModerationController::class, 'reports']);
+            Route::get('/reports/{report}', [CommunityModerationController::class, 'report']);
+            Route::patch('/reports/{report}', [CommunityModerationController::class, 'updateReport']);
+            Route::patch('/messages/{message}/hide', [CommunityModerationController::class, 'hideMessage']);
+            Route::patch('/messages/{message}/restore', [CommunityModerationController::class, 'restoreMessage']);
+            Route::patch('/messages/{message}/remove', [CommunityModerationController::class, 'removeMessage']);
+            Route::post('/identities/{identity}/restriction', [CommunityModerationController::class, 'restrictPosting']);
+            Route::delete('/identities/{identity}/restriction', [CommunityModerationController::class, 'restorePosting']);
+        });
     });
 });
