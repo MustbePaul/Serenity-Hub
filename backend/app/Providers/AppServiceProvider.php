@@ -33,5 +33,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('community-reports', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
         });
+
+        RateLimiter::for('community-broadcast-auth', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

@@ -61,7 +61,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/support-tickets', [AppContentController::class, 'support']);
 
         Route::get('/community/me', [CommunityController::class, 'me']);
-        Route::post('/community/broadcasting/auth', CommunityBroadcastAuthController::class);
+        Route::post('/community/broadcasting/auth', CommunityBroadcastAuthController::class)->middleware('throttle:community-broadcast-auth');
         Route::get('/community/rooms', [CommunityController::class, 'rooms']);
         Route::get('/community/rooms/{room:slug}/messages', [CommunityController::class, 'messages']);
         Route::post('/community/rooms/{room:slug}/messages', [CommunityController::class, 'storeMessage'])->middleware('throttle:community-posts');

@@ -30,11 +30,14 @@ class CommunityRealtimeEvent {
   final CommunityReactionSummary? reactions;
   final String? roomSlug;
 
-  factory CommunityRealtimeEvent.messageCreated(CommunityMessage message) {
+  factory CommunityRealtimeEvent.messageCreated(
+    CommunityMessage message, {
+    String? roomSlug,
+  }) {
     return CommunityRealtimeEvent._(
       type: CommunityRealtimeEventType.messageCreated,
       message: message,
-      roomSlug: null,
+      roomSlug: roomSlug,
     );
   }
 
@@ -190,6 +193,7 @@ class CommunityRealtimeService {
         _events.add(
           CommunityRealtimeEvent.messageCreated(
             CommunityMessage.fromJson(Map<String, dynamic>.from(messageJson)),
+            roomSlug: _roomSlugFrom(data),
           ),
         );
       }

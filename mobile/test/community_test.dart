@@ -337,6 +337,19 @@ void main() {
     expect(provider.messages.first.body, 'Live hello');
   });
 
+  test('incoming live message from another room is ignored', () {
+    final provider = filledProvider();
+
+    provider.handleRealtimeEvent(
+      CommunityRealtimeEvent.messageCreated(
+        communityMessage(id: 23, body: 'Wrong room'),
+        roomSlug: 'stress-anxiety',
+      ),
+    );
+
+    expect(provider.messages.any((message) => message.id == 23), isFalse);
+  });
+
   test('reaction event updates counts while preserving my reactions', () {
     final provider =
         filledProvider()

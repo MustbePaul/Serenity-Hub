@@ -18,8 +18,10 @@ class CommunityBroadcastAuthController extends ApiController
 
         $prefix = 'private-community.room.';
         abort_unless(Str::startsWith($data['channel_name'], $prefix), 403);
+        abort_unless(preg_match('/^\d+\.\d+$/', $data['socket_id']) === 1, 403);
 
         $slug = Str::after($data['channel_name'], $prefix);
+        abort_unless(preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug) === 1, 403);
         abort_unless(CommunityRoom::query()->where('slug', $slug)->where('is_active', true)->exists(), 403);
 
         $pusher = new Pusher(

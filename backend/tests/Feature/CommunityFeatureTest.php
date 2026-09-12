@@ -338,6 +338,45 @@ class CommunityFeatureTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_channel_authorization_rejects_unauthenticated_inactive_and_malformed_requests(): void
+    {
+        $user = $this->user();
+        $inactive = $this->room(['slug' => 'sleep', 'is_active' => false]);
+
+        $this->postJson('/api/v1/community/broadcasting/auth', [
+            'socket_id' => '123.456',
+            'channel_name' => 'private-community.room.world',
+        ])->assertUnauthorized();
+
+        $this->actingWithToken($user)
+            ->postJson('/api/v1/community/broadcasting/auth', [
+                'socket_id' => '123.456',
+                'channel_name' => 'private-community.room.'.$inactive->slug,
+            ])
+            ->assertForbidden();
+
+        $this->actingWithToken($user)
+            ->postJson('/api/v1/community/broadcasting/auth', [
+                'socket_id' => 'not-a-socket',
+                'channel_name' => 'private-community.room.world',
+            ])
+            ->assertForbidden();
+
+        $this->actingWithToken($user)
+            ->postJson('/api/v1/community/broadcasting/auth', [
+                'socket_id' => '123.456',
+                'channel_name' => 'private-community.room.world..extra',
+            ])
+            ->assertForbidden();
+
+        $this->actingWithToken($user)
+            ->postJson('/api/v1/community/broadcasting/auth', [
+                'socket_id' => '123.456',
+                'channel_name' => 'presence-community.room.world',
+            ])
+            ->assertForbidden();
+    }
+
     public function test_message_events_are_dispatched_and_payloads_are_privacy_safe(): void
     {
         Event::fake([

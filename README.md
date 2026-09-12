@@ -148,3 +148,7 @@ cd mobile
 flutter analyze
 flutter test
 ```
+
+## Production Readiness
+
+Serenity Circle realtime messaging and moderation deployment requirements are documented in [docs/serenity-circle-production-readiness.md](docs/serenity-circle-production-readiness.md).
