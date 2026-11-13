@@ -1,0 +1,7 @@
+# System architecture
+
+`services/api` is the Laravel 13 authority for accounts, profiles, moods, media progress, therapist records, appointments and Serenity Circle. It alone accesses the application database. HTTP `/api/v1` is the persistence contract. Reverb sends private authorized community events; clients refetch/poll HTTP after gaps. `apps/mobile` is Flutter for Android and iOS; its web runner remains a reference. `apps/web` is an independently built React + TypeScript application using Vite, React Router and Tailwind CSS. No separate database or Laravel service was added.
+
+React demo uses synthetic local content and blocks backend calls. React staging connects to an isolated Laravel service and database through same-origin `/api` and `/web` proxy paths. Staging credentials, Reverb secret and database access stay server side. The Reverb app key is public configuration; authorization goes through `/api/v1/community/broadcasting/auth`.
+
+Flutter mobile keeps its existing bearer-token flow. React browser login uses Laravel's session guard through `/web/*`; registration does not mint a bearer token. Laravel's session cookie is HttpOnly, and browser mutations send a CSRF token obtained from `/web/csrf`. API authentication accepts either a mobile bearer token or an active browser session; session writes require the CSRF header. Vite proxies `/api` and `/web` for local same-origin requests. Staging hosting must reverse-proxy those paths on the web origin with HTTPS. Browser code stores no token in localStorage or sessionStorage.
