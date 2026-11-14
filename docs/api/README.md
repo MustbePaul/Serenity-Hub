@@ -1,0 +1,5 @@
+# Shared API contract
+
+Laravel in `services/api` owns `/api/v1`. Flutter uses `apps/mobile/lib/api_client.dart` with mobile bearer auth. React uses the typed client in `apps/web/src/lib/api.ts` with Laravel browser sessions, without a browser bearer token. `/web/csrf`, `/web/login`, `/web/register`, `/web/me` and `/web/logout` manage that session. Public API reads include resources, media, wellness sessions, therapist listings and availability. Protected writes include mood check-ins, media progress, profile, bookmarks, appointments and Serenity Circle operations. Generate the route list with `php artisan route:list --path=api` from `services/api`.
+
+HTTP responses are authoritative. Circle subscriptions use private Reverb channels and `/community/broadcasting/auth`; the web client polls HTTP and refetches after events or reconnects. Only Laravel connects to the application database. Browser builds use same-origin reverse proxy paths; Reverb allows only exact origins. Mobile bearer login retains its existing token contract.

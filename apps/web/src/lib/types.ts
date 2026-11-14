@@ -1,0 +1,14 @@
+export type ApiEnvelope<T> = { success: boolean; message: string; data: T; meta?: { current_page?: number; last_page?: number; total?: number } }
+export type User = { id: number; name: string; email: string; role: string; profile?: { phone?: string | null } }
+export type Resource = { id: number; title: string; slug?: string; type: string; summary: string; body?: string | null; content_url?: string | null; category?: { name: string; slug: string }; tags?: string[] }
+export type Media = { id: number; title: string; description?: string | null; media_type: 'audio' | 'video' | 'image' | 'pdf'; file_url: string; thumbnail_url?: string | null; duration_seconds?: number | null; transcript?: string | null }
+export type Session = { id: number; title: string; description?: string; category: string; session_type: string; instructions?: string | null; transcript?: string | null; estimated_duration_seconds?: number; is_featured?: boolean; inhale_seconds?: number; hold_seconds?: number; exhale_seconds?: number; second_hold_seconds?: number; media_asset?: Media | null; demonstration_video?: Media | null; narration_media?: Media | null }
+export type Therapist = { id: number; user?: { name: string }; bio?: string | null; location?: string | null; consultation_fee?: number | null; session_modes?: string[]; verification_status?: string; specialties?: { name: string }[] }
+export type Slot = { id: number; starts_at: string; ends_at: string; status: string }
+export type Appointment = { id: number; status: string; scheduled_start: string; scheduled_end: string; mode: string; therapist?: Therapist }
+export type Home = { quote?: { text: string; author?: string } | null; affirmation?: { text: string } | null; latest_mood?: { score: number; label: string } | null; recommended_resource?: Resource | null; upcoming_appointment?: Appointment | null }
+export type CircleRoom = { id: number; name: string; slug: string; description?: string | null }
+export type AnonymousIdentity = { id: string; display_name: string; avatar_seed?: string }
+export type CircleMessage = { id: number; parent_id?: number | null; body: string | null; anonymous_identity: AnonymousIdentity; reactions: Record<string, number>; my_reactions: string[]; reply_count: number; is_mine: boolean; status: string; created_at: string }
+export type CirclePostResult = { message: CircleMessage; safety?: { supportive_notice?: string | null; requires_review?: boolean } }
+export type SupportContact = { id: number; country_code: string; country_name: string; service_name: string; phone_number?: string | null; website_url?: string | null; is_emergency_service: boolean; is_crisis_support: boolean }
