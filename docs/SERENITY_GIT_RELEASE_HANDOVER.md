@@ -45,7 +45,7 @@ The prior web-trial report records eight browser workflows against an isolated l
 
 The first GitHub `component checks` run for `c214afc` failed: web passed, API could not install its locked Symfony 8 packages on CI PHP 8.3, and Flutter analysis treated new SDK-wide `material.dart` deprecation infos as fatal. Commit `75b0219` changed CI to PHP 8.5 and `flutter analyze --no-fatal-infos`; errors and warnings remain fatal. [GitHub Actions run 43567944258](https://github.com/MustbePaul/Serenity-Hub/actions/runs/43567944258) completed successfully for `75b0219`: web, API and Flutter jobs all passed. The handover-only commit should receive its own CI run after push; verify that run separately.
 
-**MAIN NOT UPDATED.** The external staging, care, crisis-support, moderation, privacy and retention gates remain unresolved. GitHub returned `Branch not protected` for the main protection endpoint; that absence is not approval to merge. A draft `develop` to `main` pull request may be used to track the release candidate, but it must not be merged or deployed until the checks and governance gates are independently confirmed.
+**MAIN NOT UPDATED.** The external staging, care, crisis-support, moderation, privacy and retention gates remain unresolved. GitHub returned `Branch not protected` for the main protection endpoint; that absence is not approval to merge. [Draft PR #1](https://github.com/MustbePaul/Serenity-Hub/pull/1) tracks `develop` to `main`; it must not be merged or deployed until the checks and governance gates are independently confirmed.
 
 ## Resume in a fresh Codex session
 
